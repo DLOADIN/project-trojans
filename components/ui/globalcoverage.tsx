@@ -8,7 +8,7 @@ import pic1 from "@/public/images/pic.jpg"
 
 export function GlobalCoverage() {
   return (
-    <section className="relative">
+    <section className="relative" id="vision">
       <Fragment>
         <div className="absolute inset-0 z-0">
           {/* Background pattern by @ibelick (https://bg.ibelick.com/) */}

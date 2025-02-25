@@ -71,7 +71,7 @@ export function BentoGrid() {
   ]
 
   return (
-    <section className="py-24 px-4 relative">
+    <section className="py-24 px-4 relative" id="Features">
       <Fragment>
         <div className="absolute inset-0 z-0">
           {/* Background pattern by @ibelick (https://bg.ibelick.com/) */}

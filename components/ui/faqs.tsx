@@ -45,7 +45,7 @@ export function FAQs() {
   }
 
   return (
-    <section className="relative py-16 md:py-24">
+    <section className="relative py-16 md:py-24" id="faqs">
       <Fragment>
         <div className="absolute inset-0 z-0">
           {/* Background pattern by @ibelick (https://bg.ibelick.com/) */}
@@ -97,7 +97,7 @@ export function FAQs() {
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="bg-white p-5 rounded-b-lg text-sm text-gray-600 border-t border-gray-100"
+                      className="bg-white p-5 rounded-b-lg text-14px text-gray-600 border-t border-gray-100"
                     >
                       <p>{item.answer}</p>
                     </motion.div>

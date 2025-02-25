@@ -7,7 +7,7 @@ import { Shield, Clock, AlertTriangle } from "lucide-react"
 
 export function RoadSafetySection() {
   return (
-    <section className="relative py-16 md:py-24">
+    <section className="relative py-16 md:py-24" id="mission">
       <Fragment>
         <div className="absolute inset-0 z-0">
           {/* Background pattern by @ibelick (https://bg.ibelick.com/) */}

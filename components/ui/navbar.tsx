@@ -10,19 +10,22 @@ export function Navbar() {
           <div className="flex items-center space-x-12">
             <Link href="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-[#00D959] rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-3xl">A</span>
+                <span className="text-white font-medium text-50px">A</span>
               </div>
               <span className="text-gray-900 text-lg font-medium">AccidentAI</span>
             </Link>
             <div className="hidden md:flex items-center space-x-10">
-              <Link href="/portfolio" className="text-gray-600 hover:text-gray-800 text-[15px] transition-colors">
+              <Link href="#Features" className="text-gray-600 hover:text-gray-800 text-[15px] transition-colors">
                 Features
               </Link>
-              <Link href="/benefits" className="text-gray-600 hover:text-gray-800 text-[15px] transition-colors">
-                Services 
+              <Link href="#mission" className="text-gray-600 hover:text-gray-800 text-[15px] transition-colors">
+                Mission
               </Link>
-              <Link href="/services" className="text-gray-600 hover:text-gray-800 text-[15px] transition-colors">
-                Contact
+              <Link href="#vision" className="text-gray-600 hover:text-gray-800 text-[15px] transition-colors">
+                Vision
+              </Link>
+              <Link href="#faqs" className="text-gray-600 hover:text-gray-800 text-[15px] transition-colors">
+                Faqs
               </Link>
             </div>
           </div>
