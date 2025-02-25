@@ -3,6 +3,9 @@
 import { motion } from "framer-motion"
 import { Clock, Globe, Shield, Car } from "lucide-react"
 import { Fragment } from "react"
+import Image from "next/image"
+import pic1 from "@/public/images/pic.jpg"
+import { StaticImageData } from "next/image"
 
 export function GlobalCoverage() {
   return (
@@ -64,7 +67,7 @@ export function GlobalCoverage() {
                       </div>
                       <div>
                         <p className="font-medium">1M+</p>
-                        <p className="text-sm text-gray-600">Cars protected</p>
+                        <p className="text-sm text-gray-600">Cars will be protected</p>
                       </div>
                     </div>
                   </div>
@@ -85,8 +88,8 @@ export function GlobalCoverage() {
                       backgroundSize: "20px 20px",
                     }}
                   />
-                  <img
-                    src={`https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Capture.JPG-jVO1YbTdaD65iZ0waXffSbc0cXhHyK.jpeg`}
+                  <Image
+                    src={pic1} 
                     alt="Global coverage map"
                     className="rounded-lg shadow-2xl"
                   />
