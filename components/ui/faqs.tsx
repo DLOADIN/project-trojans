@@ -61,8 +61,10 @@ export function FAQs() {
               transition={{ duration: 0.5 }}
               className="text-center mb-12"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-black">
+              Frequently Asked <span className="text-green-600 font-italic"> Questions</span>
+              </h2>
+              <p className="text-gray-600 max-w-2xl text-lg mx-auto">
                 Find answers to common questions about our road safety system
               </p>
             </motion.div>
@@ -82,7 +84,7 @@ export function FAQs() {
                       openIndex === index ? "bg-green-50 shadow-sm" : "bg-white hover:bg-gray-50"
                     }`}
                   >
-                    <h3 className="font-medium text-lg text-gray-800">{item.question}</h3>
+                    <h3 className="font-medium text-12px text-gray-800">{item.question}</h3>
                     <ChevronDown
                       className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${
                         openIndex === index ? "transform rotate-180" : ""
@@ -95,7 +97,7 @@ export function FAQs() {
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="bg-white p-5 rounded-b-lg text-gray-600 border-t border-gray-100"
+                      className="bg-white p-5 rounded-b-lg text-sm text-gray-600 border-t border-gray-100"
                     >
                       <p>{item.answer}</p>
                     </motion.div>

@@ -5,6 +5,8 @@ import { Hero } from "@/components/ui/hero"
 import { BentoGrid } from "@/components/ui/bentogrid"
 import { RoadSafetySection } from "@/components/ui/roadsafety"
 import { GlobalCoverage } from "@/components/ui/globalcoverage"
+import { FAQs } from "@/components/ui//faqs"
+import { Footer } from "@/components/ui//footer"
 import { motion } from "framer-motion"
 
 export default function Home() {
@@ -23,6 +25,8 @@ export default function Home() {
           <BentoGrid />
           <RoadSafetySection />
           <GlobalCoverage />
+          <FAQs/>
+          <Footer />
         </main>
     </motion.div>
   )
