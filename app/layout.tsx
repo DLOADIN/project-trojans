@@ -9,7 +9,7 @@ const font = Inter({
 
 
 export const metadata: Metadata = {
-  title: "THE ROAD",
+  title: "ACCIDENTAI",
   description: "Created by Uteramahoro Avellin Bonaparte & Manzi David",
 };
 
