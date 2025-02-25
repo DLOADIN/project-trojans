@@ -87,8 +87,10 @@ export function BentoGrid() {
               transition={{ duration: 0.5 }}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Comprehensive Safety Features</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold">
+              Comprehensive Safety<span className="text-green-600">Features</span>
+              </h2>
+              <p className="text-gray-600 text-lgmax-w-2xl mx-auto">
                 Our system combines multiple technologies to ensure maximum road safety
               </p>
             </motion.div>

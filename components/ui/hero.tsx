@@ -24,12 +24,11 @@ export function Hero() {
           <h1 className="text-4xl md:text-7xl font-bold text-gray-900 text-center max-w-5xl tracking-tight leading-[1.15] mb-8">
             Transforming Road Safety
             <br />
-            Through Model Detection
+            Through <span className="text-green-700">Model</span> Detection
           </h1>
 
           <p className="text-[15px] text-gray-600 text-center max-w-2xl mb-12 leading-relaxed">
-            We develop cutting-edge an AI model that monitor and detect accidents in real-time, enhancing road safety and
-            emergency response capabilities for a safer tomorrow.
+            We are developing cutting-edge camera system that monitor and detect accidents in real-time, enhancing road safety and emergency response capabilities for a safer tomorrow.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8 max-w-3xl">
