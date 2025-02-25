@@ -5,7 +5,6 @@ import { Clock, Globe, Shield, Car } from "lucide-react"
 import { Fragment } from "react"
 import Image from "next/image"
 import pic1 from "@/public/images/pic.jpg"
-import { StaticImageData } from "next/image"
 
 export function GlobalCoverage() {
   return (
@@ -91,7 +90,7 @@ export function GlobalCoverage() {
                   <Image
                     src={pic1} 
                     alt="Global coverage map"
-                    className="rounded-lg shadow-2xl"
+                    className="rounded-xl shadow-2xl border border-white "
                   />
                 </motion.div>
               </div>

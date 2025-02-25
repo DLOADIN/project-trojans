@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useRef, useEffect } from "react"
 
 export function AuroraBackground({ children }: { children: React.ReactNode }) {
