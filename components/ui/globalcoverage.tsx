@@ -26,7 +26,7 @@ export function GlobalCoverage() {
                   transition={{ duration: 0.5 }}
                 >
                   <span className="inline-flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700">
-                    <Globe className="w-4 h-4" />
+                     <Globe className="w-4 h-4" /> 
                     Country Wide Coverage
                   </span>
 
