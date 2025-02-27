@@ -1,7 +1,6 @@
 "use client"
 
 import { Search } from "./search"
-import { UserNav } from "./user-nav"
 
 export function Header() {
   return (
@@ -13,7 +12,6 @@ export function Header() {
       </div>
       <div className="ml-auto flex items-center gap-4">
         <Search />
-        <UserNav />
       </div>
     </header>
   )
