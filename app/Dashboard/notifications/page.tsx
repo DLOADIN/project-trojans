@@ -5,12 +5,10 @@ import Layout from "../layout"
 
 export default function NotificationsPage() {
   return (
-    <Layout>
       <div className="space-y-6">
         <h2 className="text-3xl font-bold tracking-tight">Notifications</h2>
         <NotificationsTable />
       </div>
-  </Layout>
   )
 }
 
