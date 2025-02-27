@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { Home, Upload, ChartNoAxesCombined, Film } from "lucide-react"
 
-const menuItems = [
+const menuItems = 
+[
   { name: "Home", icon: Home, href: "/Dashboard" },
   { name: "Upload", icon: Upload, href: "/Dashboard/upload" },
   { name: "Analytics", icon: ChartNoAxesCombined, href: "/Dashboard/Analytics" },
