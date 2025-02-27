@@ -1,5 +1,6 @@
 import { Search } from "./search"
 import { UserNav } from "./user-nav"
+import Layout from "../layout"
 
 export function Header() {
   return (

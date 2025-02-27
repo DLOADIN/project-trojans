@@ -2,7 +2,7 @@ import type React from "react"
 import { Sidebar } from "./sidebar"
 import { Header } from "./components/header"
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-[#f8f9fa]">
       <Sidebar />

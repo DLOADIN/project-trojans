@@ -2,10 +2,10 @@ import Link from "next/link"
 import { Home, Upload, Bell, Film } from "lucide-react"
 
 const menuItems = [
-  { name: "Home", icon: Home, href: "/" },
-  { name: "Upload", icon: Upload, href: "/upload" },
-  { name: "Notifications", icon: Bell, href: "/notifications" },
-  { name: "Highlights", icon: Film, href: "/highlights" },
+  { name: "Home", icon: Home, href: "/Dashboard" },
+  { name: "Upload", icon: Upload, href: "/Dashboard/upload" },
+  { name: "Notifications", icon: Bell, href: "/Dashboard/notifications" },
+  { name: "Highlights", icon: Film, href: "/Dashboard/highlights" },  
 ]
 
 export function Sidebar() {

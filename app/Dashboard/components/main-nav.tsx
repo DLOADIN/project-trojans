@@ -60,15 +60,6 @@ export function MainNav() {
           </Button>
         ))}
       </nav>
-      <div className="mt-auto border-t p-4">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-muted" />
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Riley Carter</span>
-            <span className="text-xs text-muted-foreground">riley@email.com</span>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

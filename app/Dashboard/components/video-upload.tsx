@@ -7,7 +7,6 @@ import { Upload, X } from "lucide-react"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Progress } from "../ui/progress"
-import 
 
 export function VideoUpload() {
   const [file, setFile] = useState<File | null>(null)
@@ -16,7 +15,6 @@ export function VideoUpload() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
-      // Simulate upload progress
       let progress = 0
       const interval = setInterval(() => {
         progress += 10
