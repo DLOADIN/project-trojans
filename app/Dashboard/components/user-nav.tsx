@@ -1,0 +1,14 @@
+import { Bell } from "lucide-react"
+
+export function UserNav() {
+  return (
+    <div className="flex items-center gap-4">
+      <button className="relative rounded-full p-2 hover:bg-[#f8f9fa]">
+        <Bell className="h-5 w-5 text-[#6f767e]" />
+        <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+      </button>
+      <span className="text-sm text-[#1a1d1f]">Apr 17, 2023</span>
+    </div>
+  )
+}
+
