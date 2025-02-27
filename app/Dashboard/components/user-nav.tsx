@@ -2,6 +2,9 @@
 
 import { Bell } from "lucide-react"
 
+const date = new Date();
+const TodayDate = date.toLocaleString('default', { month: 'short', day: 'numeric', year: 'numeric' });
+
 export function UserNav() {
   return (
     <div className="flex items-center gap-4">
@@ -9,7 +12,7 @@ export function UserNav() {
         <Bell className="h-5 w-5 text-[#6f767e]" />
         <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
       </button>
-      <span className="text-sm text-[#1a1d1f]">Apr 17, 2023</span>
+      <span className="text-sm text-[#1a1d1f]">{TodayDate}</span>
     </div>
   )
 }

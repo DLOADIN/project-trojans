@@ -2,7 +2,6 @@
 
 import createGlobe, { type COBEOptions } from "cobe"
 import { useCallback, useEffect, useRef, useState } from "react"
-
 import { cn } from "@/lib/utils"
 
 const GLOBE_CONFIG: COBEOptions = {
@@ -40,31 +39,32 @@ export function Globe({
   className?: string
   config?: COBEOptions
 }) {
-  let phi = 0
-  let width = 0
+  const [width, setWidth] = useState(0)
+  const [r, setR] = useState(0)
+  const [phi, setPhi] = useState(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pointerInteracting = useRef(null)
   const pointerInteractionMovement = useRef(0)
-  const [r, setR] = useState(0)
+  const globeRef = useRef<any>(null);
 
-  const updatePointerInteraction = (value: any) => {
+  const updatePointerInteraction = useCallback((value: any) => {
     pointerInteracting.current = value
     if (canvasRef.current) {
       canvasRef.current.style.cursor = value ? "grabbing" : "grab"
     }
-  }
+  }, [])
 
-  const updateMovement = (clientX: any) => {
+  const updateMovement = useCallback((clientX: any) => {
     if (pointerInteracting.current !== null) {
-      const delta = clientX - pointerInteracting.current
+      const delta = clientX - pointerInteractionMovement.current
       pointerInteractionMovement.current = delta
       setR(delta / 200)
     }
-  }
+  }, [])
 
   const onRender = useCallback(
     (state: Record<string, any>) => {
-      if (!pointerInteracting.current) phi += 0.005
+      if (!pointerInteracting.current) setPhi((prevPhi) => prevPhi + 0.005)
       state.phi = phi + r
       state.width = width * 2
       state.height = width * 2
@@ -74,7 +74,7 @@ export function Globe({
 
   const onResize = useCallback(() => {
     if (canvasRef.current) {
-      width = canvasRef.current.offsetWidth
+      setWidth(canvasRef.current.offsetWidth)
     }
   }, [])
 
@@ -82,7 +82,7 @@ export function Globe({
     window.addEventListener("resize", onResize)
     onResize()
 
-    const globe = createGlobe(canvasRef.current!, {
+    globeRef.current = createGlobe(canvasRef.current!, {
       ...config,
       width: width * 2,
       height: width * 2,
@@ -92,9 +92,9 @@ export function Globe({
     setTimeout(() => (canvasRef.current!.style.opacity = "1"))
     return () => {
       window.removeEventListener("resize", onResize)
-      globe.destroy()
+      globeRef.current?.destroy()
     }
-  }, [config, onResize, onRender])
+  }, [config, onResize, onRender, width])
 
   return (
     <div className={cn("absolute inset-0 mx-auto aspect-[1/1] w-full max-w-[600px]", className)}>
@@ -110,4 +110,3 @@ export function Globe({
     </div>
   )
 }
-
