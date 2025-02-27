@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Bar, BarChart, Line, LineChart, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart"
 
 const lineChartData = [
   { name: "Jan", total: 1200 },
@@ -28,18 +28,6 @@ const barChartData = [
   { name: "Zone E", accidents: 25 },
   { name: "Zone F", accidents: 35 },
 ]
-
-// Define the interface outside the component
-interface ChartConfig {
-  total: {
-    label: string;
-    color: string;
-  };
-  accidents: {
-    label: string;
-    color: string;
-  };
-}
 
 export function TrendCharts() {
   const chartConfig: ChartConfig = {
