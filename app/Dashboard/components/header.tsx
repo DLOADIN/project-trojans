@@ -1,6 +1,6 @@
 "use client"
 
-import { Search } from "./search"
+import { UserNav } from "./user-nav"
 
 export function Header() {
   return (
@@ -11,7 +11,7 @@ export function Header() {
         <span className="text-[#6f767e]">Home</span>
       </div>
       <div className="ml-auto flex items-center gap-4">
-        <Search />
+        <UserNav />
       </div>
     </header>
   )
