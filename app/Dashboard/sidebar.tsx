@@ -3,9 +3,9 @@ import { Home, Upload, Bell, Film } from "lucide-react"
 
 const menuItems = [
   { name: "Home", icon: Home, href: "/" },
-  { name: "Upload", icon: Upload, href: "../upload" },
-  { name: "Notifications", icon: Bell, href: "../notifications" },
-  { name: "Highlights", icon: Film, href: "../highlights" },
+  { name: "Upload", icon: Upload, href: "/upload" },
+  { name: "Notifications", icon: Bell, href: "/notifications" },
+  { name: "Highlights", icon: Film, href: "/highlights" },
 ]
 
 export function Sidebar() {
@@ -32,15 +32,6 @@ export function Sidebar() {
           </Link>
         ))}
       </nav>
-      <div className="border-t border-[#f1f1f1] p-4">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-[#f1f1f1]" />
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-[#1a1d1f]">Riley Carter</span>
-            <span className="text-xs text-[#6f767e]">riley@email.com</span>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
