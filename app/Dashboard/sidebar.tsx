@@ -1,12 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { Home, Upload, Bell, Film } from "lucide-react"
+import { Home, Upload, ChartNoAxesCombined, Film } from "lucide-react"
 
 const menuItems = [
   { name: "Home", icon: Home, href: "/Dashboard" },
   { name: "Upload", icon: Upload, href: "/Dashboard/upload" },
-  { name: "Notifications", icon: Bell, href: "/Dashboard/notifications" },
+  { name: "Analytics", icon: ChartNoAxesCombined, href: "/Dashboard/Analytics" },
   { name: "Highlights", icon: Film, href: "/Dashboard/highlights" },  
 ]
 
