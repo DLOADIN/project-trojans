@@ -1,3 +1,4 @@
+"use client"
 
 import { OverviewSection } from "./components/overview-section"
 import { TrendCharts } from "./components/trend-charts"

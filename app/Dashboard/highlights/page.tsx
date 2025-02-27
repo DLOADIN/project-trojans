@@ -1,5 +1,6 @@
+"use client"
+
 import { VideoHighlights } from "../components/video-highlights"
-import Layout from "../layout"
 
 export default function HighlightsPage() {
   return (

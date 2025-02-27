@@ -1,4 +1,5 @@
-import Layout from "../layout"
+"use client"
+
 import { VideoUpload } from "../components/video-upload"
 
 export default function UploadPage() {

@@ -1,7 +1,6 @@
 "use clien"
 
 import { NotificationsTable } from "../components/notifications-table"
-import Layout from "../layout"
 
 export default function NotificationsPage() {
   return (

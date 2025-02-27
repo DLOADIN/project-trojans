@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { Home, Upload, Bell, Film } from "lucide-react"
 
