@@ -3,8 +3,7 @@
 import Link from "next/link"
 import { Home, Upload, ChartNoAxesCombined, Film } from "lucide-react"
 
-const menuItems = 
-[
+const menuItems = [
   { name: "Home", icon: Home, href: "/Dashboard" },
   { name: "Upload", icon: Upload, href: "/Dashboard/upload" },
   { name: "Analytics", icon: ChartNoAxesCombined, href: "/Dashboard/Analytics" },
@@ -34,6 +33,7 @@ export function Sidebar() {
             hover:scale-105
             hover:shadow-md
             hover:rotate-1
+            border-l-2 border-white
             my-5
           "
         >
