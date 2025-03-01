@@ -1,0 +1,13 @@
+numpy
+pandas
+opencv-python
+tensorflow
+keras
+streamlit
+Mysql
+plotly
+
+logincredentials( 
+                Username = admin,
+                Password = Password
+                )
