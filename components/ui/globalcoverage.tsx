@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Clock, Globe, Shield, Car } from "lucide-react"
+import { Clock, Shield, Car } from "lucide-react"
 import { Fragment } from "react"
 import Image from "next/image"
 import pic1 from "@/public/images/pic.jpg"

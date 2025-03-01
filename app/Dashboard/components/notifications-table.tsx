@@ -1,160 +1,94 @@
 "use client"
 
-import { useState } from "react"
-import { CaretSortIcon } from "@radix-ui/react-icons"
-import {
-  type ColumnDef,
-  type ColumnFiltersState,
-  type SortingState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
-import { Button } from "../ui/button"
-import { Input } from "../ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
+import axios from "axios"
+import { Line } from "react-chartjs-2"
+import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, Title, Tooltip, Legend, PointElement } from 'chart.js'
 
-type Notification = {
-  id: string
-  message: string
-  type: string
-  recipients: number
-  date: string
-  status: string
+ChartJS.register(CategoryScale, LinearScale, LineElement, Title, Tooltip, Legend, PointElement)
+
+interface AccidentData {
+  id: number
+  time: Date
+  location: string
+  severity_level: string
+  severity_score: number
+  accuracy: number
 }
 
-const data: Notification[] = [
-  {
-    id: "1",
-    message: "Critical event detected in Camera 1",
-    type: "Alert",
-    recipients: 245,
-    date: "2024-02-20",
-    status: "Sent",
-  },
-  {
-    id: "2",
-    message: "Weekly analysis report",
-    type: "Report",
-    recipients: 1200,
-    date: "2024-02-19",
-    status: "Sent",
-  },
-  {
-    id: "3",
-    message: "System maintenance notification",
-    type: "System",
-    recipients: 3400,
-    date: "2024-02-18",
-    status: "Sent",
-  },
-]
+function AccidentDataChart() {
+  const [databaseData, setDatabaseData] = useState<AccidentData[]>([])
+  const [datasetsVisibility, setDatasetsVisibility] = useState({ severity: true, accuracy: true })
 
-export const columns: ColumnDef<Notification>[] = [
-  {
-    accessorKey: "message",
-    header: ({ column }) => {
-      return (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Message
-          <CaretSortIcon className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-  },
-  {
-    accessorKey: "type",
-    header: "Type",
-  },
-  {
-    accessorKey: "recipients",
-    header: "Recipients",
-  },
-  {
-    accessorKey: "date",
-    header: "Date",
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-  },
-]
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get("http://127.0.0.1:5000/fetch_database")
+        const formattedData = response.data.map((i: any) => ({
+          id: i[0],
+          time: new Date(i[1]),
+          location: i[2],
+          severity_level: i[3],
+          severity_score: i[4],
+          accuracy: i[6]
+        }))
+        setDatabaseData(formattedData)
+      } catch (error) {
+        console.error("Error fetching data:", error)
+      }
+    }
 
-export function NotificationsTable() {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    fetchData()
+  }, [])
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
-    state: {
-      sorting,
-      columnFilters,
-    },
-  })
+  const toggleDatasetVisibility = (dataset: 'severity' | 'accuracy') => {
+    setDatasetsVisibility(prev => ({ ...prev, [dataset]: !prev[dataset] }))
+  }
+
+  const chartData = {
+    labels: databaseData.map(data => data.time.toLocaleString()),
+    datasets: [
+      {
+        label: 'Severity Score',
+        data: databaseData.map(data => data.severity_score),
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: datasetsVisibility.severity ? 2 : 0,
+        hidden: !datasetsVisibility.severity,
+      },
+      {
+        label: 'Accuracy',
+        data: databaseData.map(data => data.accuracy),
+        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+        borderColor: 'rgba(153, 102, 255, 1)',
+        borderWidth: datasetsVisibility.accuracy ? 2 : 0,
+        hidden: !datasetsVisibility.accuracy,
+      }
+    ]
+  }
 
   return (
-    <div>
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter messages..."
-          value={(table.getColumn("message")?.getFilterValue() as string) ?? ""}
-          onChange={(event) => table.getColumn("message")?.setFilterValue(event.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-          Previous
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-          Next
-        </Button>
-      </div>
-    </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Accident Data</CardTitle>
+        <CardDescription>Details of recorded accidents</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4">
+          <Line data={chartData} options={{ responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Accident Data' } } }} />
+        </div>
+        <div className="flex space-x-4">
+          <button onClick={() => toggleDatasetVisibility('severity')} className="px-4 py-2 bg-blue-500 text-white rounded">
+            Toggle Severity Score
+          </button>
+          <button onClick={() => toggleDatasetVisibility('accuracy')} className="px-4 py-2 bg-purple-500 text-white rounded">
+            Toggle Accuracy
+          </button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
+export default AccidentDataChart

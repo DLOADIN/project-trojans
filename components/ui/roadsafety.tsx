@@ -1,9 +1,11 @@
 "use client"
 
-import { Globe } from "@/components/ui/globe"
+// import { Globe } from "@/components/ui/globe"
 import { Fragment } from "react"
 import { motion } from "framer-motion"
 import { Shield, Clock, AlertTriangle } from "lucide-react"
+import Image from "next/image"
+import globe from '@/components/ui/globe.png'
 
 export function RoadSafetySection() {
   return (
@@ -119,10 +121,14 @@ export function RoadSafetySection() {
                 className="relative order-1 md:order-2 h-[500px]"
               >
                 <div className="relative flex size-full max-w-lg mx-auto items-center justify-center overflow-hidden rounded-xl border-2 border-white bg-white/80 backdrop-blur-sm px-8 pb-40 pt-8 md:pb-60 shadow-xl">
-                  <span className="pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-green-700 to-green-300/80 bg-clip-text text-center text-5xl font-bold leading-none text-transparent">
+                  {/* <span className="pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-green-700 to-green-300/80 bg-clip-text text-center text-5xl font-bold leading-none text-transparent">
                     Rwanda's Road Safety
-                  </span>
-                  <Globe className="top-28" />
+                  </span> */}
+                  <Image 
+                  src= {globe} 
+                  alt="Globe representing road safety in Rwanda"
+                  />
+                  {/* <Globe className="top-28" /> */}
                   <div className="pointer-events-none absolute inset-0 h-full bg-[radial-gradient(circle_at_50%_200%,rgba(0,0,0,0.1),rgba(255,255,255,0))]" />
                 </div>
 
