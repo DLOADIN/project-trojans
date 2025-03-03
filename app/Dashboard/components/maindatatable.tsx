@@ -31,7 +31,7 @@ function MainDataTable() {
     const fetchData = async () => {
       try {
         const response = await axios.get("http://127.0.0.1:5000/fetch_database")
-        const formattedData = response.data.map((i: any) => ({
+        const formattedData = (response.data as AccidentData[]).map((i: any) => ({
           id: i[0],
           time: new Date(i[1]),
           location: i[2],
