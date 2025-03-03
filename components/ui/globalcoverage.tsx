@@ -73,7 +73,8 @@ export function GlobalCoverage() {
                 </motion.div>
               </div>
 
-              <div className="relative">
+              <div className="relative"
+              >
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   whileInView={{ opacity: 1, scale: 1 }}
@@ -82,10 +83,6 @@ export function GlobalCoverage() {
                 >
                   <div
                     className="absolute inset-0 bg-dot-pattern opacity-10"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='10' cy='10' r='1.5' fill='%23333'/%3E%3C/svg%3E")`,
-                      backgroundSize: "20px 20px",
-                    }}
                   />
                   <Image
                     src={pic1} 
@@ -94,6 +91,8 @@ export function GlobalCoverage() {
                   />
                 </motion.div>
               </div>
+
+              
             </div>
           </div>
         </div>
