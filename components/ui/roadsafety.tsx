@@ -118,7 +118,7 @@ export function RoadSafetySection() {
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="relative order-1 md:order-2 h-[500px]"
+                className="relative order-1 md:order-2 h-[400px]"
               >
                 <div className="relative flex size-full max-w-lg mx-auto items-center justify-center overflow-hidden rounded-xl border-2 border-white bg-white/80 backdrop-blur-sm px-8 pb-40 pt-8 md:pb-60 shadow-xl">
                   {/* <span className="pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-green-700 to-green-300/80 bg-clip-text text-center text-5xl font-bold leading-none text-transparent">
