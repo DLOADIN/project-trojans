@@ -17,6 +17,9 @@ interface AccidentData {
   accuracy: number
 }
 
+// Type for raw data from API
+type ApiResponseData = any[][]
+
 function AccidentDataChart() {
   const [databaseData, setDatabaseData] = useState<AccidentData[]>([])
   const [datasetsVisibility, setDatasetsVisibility] = useState({ severity: true, accuracy: true })
@@ -24,16 +27,19 @@ function AccidentDataChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/fetch_database")
-        const formattedData = response.data.map((i: any) => ({
-          id: i[0],
-          time: new Date(i[1]),
-          location: i[2],
-          severity_level: i[3],
-          severity_score: i[4],
-          accuracy: i[6]
-        }))
-        setDatabaseData(formattedData)
+        const response = await axios.get<ApiResponseData>("http://127.0.0.1:5000/fetch_database");
+        
+        // Now TypeScript knows that response.data is ApiResponseData
+        const formattedData: AccidentData[] = response.data.map((item: any[]) => ({
+          id: Number(item[0]),
+          time: new Date(item[1]),
+          location: String(item[2]),
+          severity_level: String(item[3]),
+          severity_score: Number(item[4]),
+          accuracy: Number(item[5])
+        }));
+        
+        setDatabaseData(formattedData);
       } catch (error) {
         console.error("Error fetching data:", error)
       }
@@ -75,17 +81,23 @@ function AccidentDataChart() {
         <CardDescription>Details of recorded accidents</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <Line data={chartData} options={{ responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Accident Data' } } }} />
-        </div>
-        <div className="flex space-x-4">
-          <button onClick={() => toggleDatasetVisibility('severity')} className="px-4 py-2 bg-blue-500 text-white rounded">
-            Toggle Severity Score
-          </button>
-          <button onClick={() => toggleDatasetVisibility('accuracy')} className="px-4 py-2 bg-purple-500 text-white rounded">
-            Toggle Accuracy
-          </button>
-        </div>
+        {databaseData.length > 0 ? (
+          <>
+            <div className="mb-4">
+              <Line data={chartData} options={{ responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Accident Data' } } }} />
+            </div>
+            <div className="flex space-x-4">
+              <button onClick={() => toggleDatasetVisibility('severity')} className="px-4 py-2 bg-blue-500 text-white rounded">
+                Toggle Severity Score
+              </button>
+              <button onClick={() => toggleDatasetVisibility('accuracy')} className="px-4 py-2 bg-purple-500 text-white rounded">
+                Toggle Accuracy
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-8">Loading data...</div>
+        )}
       </CardContent>
     </Card>
   )

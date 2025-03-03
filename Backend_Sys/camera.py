@@ -26,6 +26,7 @@ twilio_client = Client(account_sid, auth_token)
 from_phone_number = os.getenv('TWILIO_FROM_PHONE_NUMBER')
 to_phone_number = os.getenv('TWILIO_TO_PHONE_NUMBER')
 
+
 # Function to connect to MySQL
 def get_db_connection():
     try:
