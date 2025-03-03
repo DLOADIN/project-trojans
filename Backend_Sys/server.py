@@ -13,7 +13,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Directory where uploaded videos are stored
-UPLOAD_DIRECTORY = "/mnt/d/ALU/Codex/Project-Trojan/Backend_Sys"
+UPLOAD_DIRECTORY = "/Project-Trojan/Backend_Sys/videos/"
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -41,8 +41,8 @@ def get_database():
         # Establish a connection to the MySQL database
         conn = mysql.connector.connect(
             host="localhost",
-            user="bona",
-            password="avellin",  
+            user="",
+            password="",  
             database="accident_detection",
             port=3306
         )

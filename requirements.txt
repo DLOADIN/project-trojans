@@ -6,6 +6,10 @@ keras
 streamlit
 Mysql
 plotly
+flask
+twilio
+python-dotenv
+flask-cors
 
 logincredentials( 
                 Username = admin,
