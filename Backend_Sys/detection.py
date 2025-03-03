@@ -1,4 +1,4 @@
-from keras.models import model_from_json  # Correct import
+from keras.models import model_from_json 
 import numpy as np
 
 class AccidentDetectionModel(object):
