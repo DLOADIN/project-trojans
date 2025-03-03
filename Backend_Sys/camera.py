@@ -31,8 +31,8 @@ def get_db_connection():
     try:
         conn = mysql.connector.connect(
             host="localhost",
-            user="bona",
-            password="avellin",  
+            user="",
+            password="",  
             database="accident_detection",
             port=3306
         )
