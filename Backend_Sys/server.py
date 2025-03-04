@@ -13,7 +13,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Directory where uploaded videos are stored
-UPLOAD_DIRECTORY = "/Project-Trojan/Backend_Sys/videos/"
+UPLOAD_DIRECTORY = "/mnt/c/Users/user/desktop/project-trojan/Backend_Sys/videos/"
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
