@@ -1,4 +1,4 @@
-"use clien"
+"use client"
 
 import AccidentDataChart from "../components/notifications-table"
 
