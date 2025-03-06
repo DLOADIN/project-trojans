@@ -17,11 +17,6 @@ export default function UploadPage() {
         <h2 className="text-3xl font-bold tracking-tight">Accident Detection System</h2>
         <VideoUpload />
       </div>
-      
-      <div className="space-y-4">
-        <h3 className="text-2xl font-semibold">Accident Records</h3>
-        <MainDataTable key={refreshKey} />
-      </div>
     </div>
   );
 }
