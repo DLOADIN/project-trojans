@@ -9,59 +9,53 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface AccidentData {
-  id: number
-  time: Date
-  location: string
-  severity_level: string
-  severity_score: number
-  accuracy: number
+  id: number;
+  timestamp: string;
+  location: string;
+  severity_level: string;
+  severity_score: number;
+  accuracy: number;
 }
 
-// Type for raw data from API
-type ApiResponseData = any[][]
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 function AccidentDataChart() {
-  const [databaseData, setDatabaseData] = useState<AccidentData[]>([])
-  const [severityScorePerMonth, setSeverityScorePerMonth] = useState({})
+  const [databaseData, setDatabaseData] = useState<AccidentData[]>([]);
+  const [severityScorePerMonth, setSeverityScorePerMonth] = useState<{[key: string]: number}>({});
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get<ApiResponseData>("http://127.0.0.1:5000/fetch_database");
+        setLoading(true);
+        const response = await axios.get<{data: AccidentData[]}>(`${API_URL}/fetch_database`);
+        setDatabaseData(response.data.data);
         
-        // Now TypeScript knows that response.data is ApiResponseData
-        const formattedData: AccidentData[] = response.data.map((item: any[]) => ({
-          id: Number(item[0]),
-          time: new Date(item[1]),
-          location: String(item[2]),
-          severity_level: String(item[3]),
-          severity_score: Number(item[4]),
-          accuracy: Number(item[5])
-        }));
+        // Calculate severity score per month
+        const scoreByMonth: {[key: string]: number} = {};
         
-        setDatabaseData(formattedData);
-
-        interface SeverityScorePerMonth {
-          [key: string]: number;
-        }
-
-        const severityScorePerMonth = formattedData.reduce((acc:SeverityScorePerMonth, data) => {
-          const month = data.time.toLocaleString('default', { month: 'long' });
-          if (!acc[month]) {
-            acc[month] = 0;
+        response.data.data.forEach(item => {
+          const date = new Date(item.timestamp);
+          const month = date.toLocaleString('default', { month: 'long' });
+          
+          if (!scoreByMonth[month]) {
+            scoreByMonth[month] = 0;
           }
-          acc[month] += data.severity_score;
-          return acc;
-        }, {});
-
-        setSeverityScorePerMonth(severityScorePerMonth);
+          scoreByMonth[month] += item.severity_score;
+        });
+        
+        setSeverityScorePerMonth(scoreByMonth);
+        setLoading(false);
       } catch (error) {
-        console.error("Error fetching data:", error)
+        console.error("Error fetching data:", error);
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [])
+    fetchData();
+    const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const chartData = {
     labels: Object.keys(severityScorePerMonth),
@@ -83,16 +77,18 @@ function AccidentDataChart() {
         <CardDescription>Details of recorded accidents</CardDescription>
       </CardHeader>
       <CardContent>
-        {databaseData.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-8">Loading data...</div>
+        ) : databaseData.length > 0 ? (
           <div>
             <Bar data={chartData} options={{ responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Severity Score per Month' } } }} />
           </div>
         ) : (
-          <div className="text-center py-8">Loading data...</div>
+          <div className="text-center py-8">No data available</div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default AccidentDataChart
+export default AccidentDataChart;
