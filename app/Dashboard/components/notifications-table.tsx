@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
-import axios from "axios"
-import { Line } from "react-chartjs-2"
-import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, Title, Tooltip, Legend, PointElement } from 'chart.js'
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import axios from "axios";
+import { Bar } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, LineElement, Title, Tooltip, Legend, PointElement)
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface AccidentData {
   id: number
@@ -22,7 +22,7 @@ type ApiResponseData = any[][]
 
 function AccidentDataChart() {
   const [databaseData, setDatabaseData] = useState<AccidentData[]>([])
-  const [datasetsVisibility, setDatasetsVisibility] = useState({ severity: true, accuracy: true })
+  const [severityScorePerMonth, setSeverityScorePerMonth] = useState({})
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +40,21 @@ function AccidentDataChart() {
         }));
         
         setDatabaseData(formattedData);
+
+        interface SeverityScorePerMonth {
+          [key: string]: number;
+        }
+
+        const severityScorePerMonth = formattedData.reduce((acc:SeverityScorePerMonth, data) => {
+          const month = data.time.toLocaleString('default', { month: 'long' });
+          if (!acc[month]) {
+            acc[month] = 0;
+          }
+          acc[month] += data.severity_score;
+          return acc;
+        }, {});
+
+        setSeverityScorePerMonth(severityScorePerMonth);
       } catch (error) {
         console.error("Error fetching data:", error)
       }
@@ -48,31 +63,18 @@ function AccidentDataChart() {
     fetchData()
   }, [])
 
-  const toggleDatasetVisibility = (dataset: 'severity' | 'accuracy') => {
-    setDatasetsVisibility(prev => ({ ...prev, [dataset]: !prev[dataset] }))
-  }
-
   const chartData = {
-    labels: databaseData.map(data => data.time.toLocaleString()),
+    labels: Object.keys(severityScorePerMonth),
     datasets: [
       {
-        label: 'Severity Score',
-        data: databaseData.map(data => data.severity_score),
+        label: 'Severity Score per Month',
+        data: Object.values(severityScorePerMonth),
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: datasetsVisibility.severity ? 2 : 0,
-        hidden: !datasetsVisibility.severity,
-      },
-      {
-        label: 'Accuracy',
-        data: databaseData.map(data => data.accuracy),
-        backgroundColor: 'rgba(153, 102, 255, 0.2)',
-        borderColor: 'rgba(153, 102, 255, 1)',
-        borderWidth: datasetsVisibility.accuracy ? 2 : 0,
-        hidden: !datasetsVisibility.accuracy,
+        borderWidth: 1,
       }
     ]
-  }
+  };
 
   return (
     <Card className="w-full">
@@ -82,19 +84,9 @@ function AccidentDataChart() {
       </CardHeader>
       <CardContent>
         {databaseData.length > 0 ? (
-          <>
-            <div className="mb-4">
-              <Line data={chartData} options={{ responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Accident Data' } } }} />
-            </div>
-            <div className="flex space-x-4">
-              <button onClick={() => toggleDatasetVisibility('severity')} className="px-4 py-2 bg-blue-500 text-white rounded">
-                Toggle Severity Score
-              </button>
-              <button onClick={() => toggleDatasetVisibility('accuracy')} className="px-4 py-2 bg-purple-500 text-white rounded">
-                Toggle Accuracy
-              </button>
-            </div>
-          </>
+          <div>
+            <Bar data={chartData} options={{ responsive: true, plugins: { legend: { position: 'top' }, title: { display: true, text: 'Severity Score per Month' } } }} />
+          </div>
         ) : (
           <div className="text-center py-8">Loading data...</div>
         )}

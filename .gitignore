@@ -40,8 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-#git operation
+#shell files
 /gitoperations.sh
+
+#git operation
 /myenv/
 
 /Backend_Sys/model_weights.h5
