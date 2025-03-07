@@ -1,42 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface VideoPlayerProps {
-  videoUrl: string;
-  isProcessing?: boolean;
+    videoUrl: string;
+    isProcessing: boolean;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, isProcessing = false }) => {
-  const [isStreaming, setIsStreaming] = useState(isProcessing);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-  
-  const streamUrl = `${API_URL}/video_stream/${videoUrl.split('/').pop()}`;
-  const regularVideoUrl = videoUrl;
-  
-  useEffect(() => {
-    setIsStreaming(isProcessing);
-  }, [isProcessing]);
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl, isProcessing }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
 
-  return (
-    <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-      {isStreaming ? (
-        // Streaming view (displays constantly updating JPEG frames)
-        <img 
-          src={streamUrl} 
-          className="w-full h-full object-contain"
-          alt="Live video stream" 
-        />
-      ) : (
-        // Regular video player for completed videos
-        <video 
-          src={regularVideoUrl}
-          className="w-full h-full"
-          controls
-          autoPlay
-          muted
-        />
-      )}
-    </div>
-  );
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.src = videoUrl;
+        }
+    }, [videoUrl]);
+
+    return (
+        <div className="relative">
+            <video ref={videoRef} controls autoPlay muted className="w-full h-auto" />
+            {isProcessing && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <span className="text-white">Processing...</span>
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default VideoPlayer;

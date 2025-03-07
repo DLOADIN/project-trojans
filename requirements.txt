@@ -14,14 +14,7 @@ flask-cors
 # Run (export DISPLAY=:0)
 # Install Xming and xclock
 # Install Ubuntu
-
-
-# logincredentials( 
-#                 Username = admin,
-#                 Password = Password
-#                 )
-
-#   146  export DISPLAY:0
+# logincredentials( Username = admin, Password = Password )
 #   147  export DISPLAY=:0
 #   148  xclock
 #   149  sudo apt-install x11-apps

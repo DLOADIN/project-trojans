@@ -153,20 +153,20 @@ const VideoUpload = () => {
                 </div>
               )}
 
-                {videoUrl && videoFilename && (
-                    <div className="mt-4">
-                        <h3 className="text-lg font-medium mb-2">Video Analysis</h3>
-                        <VideoPlayer 
-                            videoUrl={`${API_URL}/video_stream/${videoFilename}`} 
-                            isProcessing={processing && processingStatus?.status === 'processing'} 
-                        />
-                        {processing && processingStatus?.status === 'processing' && (
-                            <div className="mt-2 text-sm text-blue-600">
-                                Streaming real-time analysis...
-                            </div>
-                        )}
+              {videoUrl && videoFilename && (
+                  <div className="mt-4">
+                      <h3 className="text-lg font-medium mb-2">Video Analysis</h3>
+                      <VideoPlayer 
+                          videoUrl={`${API_URL}/video_stream/${videoFilename}`} 
+                          isProcessing={processing && processingStatus?.status === 'processing'} 
+                      />
+                      {processing && processingStatus?.status === 'processing' && (
+                          <div className="mt-2 text-sm text-blue-600">
+                              Streaming real-time analysis...
+                          </div>
+                      )}
                     </div>
-                )}
+              )}
             </div>
           )}
         </div>

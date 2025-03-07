@@ -110,7 +110,7 @@ def video_stream(filename):
             time.sleep(0.1)  # Small delay to prevent excessive CPU usage
     
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
+    
 def process_single_video(video_path, filename):
     try:
         # Start processing

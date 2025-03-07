@@ -8,7 +8,7 @@ class AccidentDetectionModel:
     def __init__(self, model_json_file, model_weights_file):
         # Load model architecture from JSON
         with open(model_json_file, 'r') as json_file:
-            model_json = json_file.read()
+            model_json = json_file.read()                                                                                                                                                                   
             
         # Load model weights
         self.loaded_model = load_model(model_weights_file)
