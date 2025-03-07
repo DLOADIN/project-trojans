@@ -8,7 +8,6 @@ from datetime import datetime
 import subprocess
 import mysql.connector
 from dotenv import load_dotenv
-import cv2
 
 load_dotenv()
 
@@ -18,19 +17,16 @@ CORS(app)
 # Directories
 UPLOAD_DIRECTORY = "videos"
 PROCESSED_DIRECTORY = "processed_videos"
-ACCIDENT_FRAMES_DIR = "accident_frames"
 STREAM_FRAMES_DIR = "stream_frames"
 
 os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 os.makedirs(PROCESSED_DIRECTORY, exist_ok=True)
-os.makedirs(ACCIDENT_FRAMES_DIR, exist_ok=True)
 os.makedirs(STREAM_FRAMES_DIR, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO)
-
-# Dictionary to keep track of processing videos
 processing_videos = {}
 
+# Database connection
 def get_db_connection():
     try:
         return mysql.connector.connect(
@@ -44,6 +40,7 @@ def get_db_connection():
         logging.error(f"Database connection error: {err}")
         return None
 
+# Upload video endpoint
 @app.route("/upload", methods=["POST"])
 def upload_video():
     if "file" not in request.files:
@@ -58,12 +55,41 @@ def upload_video():
     video_path = os.path.join(UPLOAD_DIRECTORY, video_filename)
     file.save(video_path)
 
-    # Add to processing_videos dictionary
     processing_videos[video_filename] = {"status": "processing", "progress": 0}
-
     threading.Thread(target=process_single_video, args=(video_path, video_filename), daemon=True).start()
     return jsonify({"status": "success", "videoUrl": video_filename}), 200
 
+# Process video in background
+def process_single_video(video_path, filename):
+    try:
+        processing_videos[filename]["progress"] = 10
+        output_path = os.path.join(PROCESSED_DIRECTORY, filename)
+        result = subprocess.run(["python", "camera.py", video_path], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            processing_videos[filename]["status"] = "completed"
+            processing_videos[filename]["progress"] = 100
+            logging.info(f"Processed video: {output_path}")
+        else:
+            processing_videos[filename]["status"] = "error"
+            logging.error(f"Error processing video: {result.stderr}")
+    except Exception as e:
+        processing_videos[filename]["status"] = "error"
+        logging.exception(f"Exception processing video: {e}")
+    finally:
+        if os.path.exists(video_path):
+            os.remove(video_path)
+
+# Fetch uploaded videos
+@app.route('/get_uploaded_videos', methods=['GET'])
+def get_uploaded_videos():
+    try:
+        video_files = [f for f in os.listdir(PROCESSED_DIRECTORY) if f.endswith('.mp4')]
+        return jsonify({"videos": video_files})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Fetch accident data
 @app.route('/fetch_database')
 def fetch_database():
     conn = get_db_connection()
@@ -81,22 +107,9 @@ def fetch_database():
         cursor.close()
         conn.close()
 
-@app.route('/get_video/<filename>')
-def get_video(filename):
-    return send_from_directory(PROCESSED_DIRECTORY, filename)
-
-@app.route('/processing_status/<filename>')
-def check_processing_status(filename):
-    if filename in processing_videos:
-        return jsonify(processing_videos[filename])
-    processed_path = os.path.join(PROCESSED_DIRECTORY, filename)
-    return jsonify({"status": "completed", "processed": os.path.exists(processed_path)})
-
+# Stream video frames
 @app.route('/video_stream/<filename>')
 def video_stream(filename):
-    """
-    Endpoint for streaming the latest frame of a processing video
-    """
     def generate_frames():
         base_filename = os.path.splitext(filename)[0]
         frame_path = os.path.join(STREAM_FRAMES_DIR, f"{base_filename}.jpg")
@@ -107,34 +120,24 @@ def video_stream(filename):
                     frame_data = f.read()
                     yield (b'--frame\r\n'
                            b'Content-Type: image/jpeg\r\n\r\n' + frame_data + b'\r\n')
-            time.sleep(0.1)  # Small delay to prevent excessive CPU usage
+            time.sleep(0.1)
     
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-    
-def process_single_video(video_path, filename):
-    try:
-        # Start processing
-        processing_videos[filename]["progress"] = 10
-        
-        # Call camera.py to process the video and get the processed file name
-        output_path = os.path.join(PROCESSED_DIRECTORY, filename)
-        result = subprocess.run(["python", "camera.py", video_path], capture_output=True, text=True)
-        
-        if result.returncode == 0:
-            processing_videos[filename]["status"] = "completed"
-            processing_videos[filename]["progress"] = 100
-            logging.info(f"Processed video: {output_path}")
-        else:
-            processing_videos[filename]["status"] = "error"
-            logging.error(f"Error processing video: {result.stderr}")
-    except Exception as e:
-        processing_videos[filename]["status"] = "error"
-        logging.exception(f"Exception processing video: {e}")
-    finally:
-        # Clean up the original video if needed
-        if os.path.exists(video_path):
-            os.remove(video_path)
 
+# Get video file
+@app.route('/get_video/<filename>')
+def get_video(filename):
+    return send_from_directory(PROCESSED_DIRECTORY, filename)
+
+# Check processing status
+@app.route('/processing_status/<filename>')
+def check_processing_status(filename):
+    if filename in processing_videos:
+        return jsonify(processing_videos[filename])
+    processed_path = os.path.join(PROCESSED_DIRECTORY, filename)
+    return jsonify({"status": "completed", "processed": os.path.exists(processed_path)})
+
+# Cleanup old videos
 def delete_old_videos():
     while True:
         now = time.time()
@@ -143,10 +146,9 @@ def delete_old_videos():
             if now - os.path.getmtime(file_path) > 24 * 3600:
                 os.remove(file_path)
         
-        # Also clean up stream frames
         for filename in os.listdir(STREAM_FRAMES_DIR):
             file_path = os.path.join(STREAM_FRAMES_DIR, filename)
-            if now - os.path.getmtime(file_path) > 1 * 3600:  # Remove after 1 hour
+            if now - os.path.getmtime(file_path) > 1 * 3600:
                 os.remove(file_path)
                 
         time.sleep(3600)

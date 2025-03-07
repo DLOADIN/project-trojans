@@ -7,7 +7,7 @@ const menuItems = [
   { name: "Home", icon: Home, href: "/Dashboard" },
   { name: "Upload", icon: Upload, href: "/Dashboard/upload" },
   { name: "Analytics", icon: ChartNoAxesCombined, href: "/Dashboard/Analytics" }, 
-  /*{ name: "Highlights", icon: Film, href: "/Dashboard/highlights" }  */  
+  { name: "Highlights", icon: Film, href: "/Dashboard/highlights" }  
 ]
 
 export function Sidebar() {
