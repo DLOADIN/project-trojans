@@ -50,3 +50,8 @@ next-env.d.ts
 /Backend_Sys/.ipynb_checkpoints/
 /Backend_Sys/.env/
 /Backend_Sys/__pycache__/
+/Backend_Sys/videos/
+/Backend_Sys/accident_cli[s/
+/Backend_Sys/processed_videos/
+/Backend_Sys/stream_frames/
+/Backend_Sys/camera.py/
