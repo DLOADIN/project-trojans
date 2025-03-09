@@ -25,7 +25,7 @@ const Settings = () => {
   const router = useRouter();
 
   useEffect(() => {
-    axios.get(`${API_URL}/get_current_user`)
+    axios.get(`${API_URL}/get_current_user?user_id=1`)
       .then(response => {
         const userData = response.data as UserData;
         setName(userData.name);
@@ -35,53 +35,90 @@ const Settings = () => {
       .catch(() => setError("Failed to fetch user data"));
   }, []);
 
+
   const handleUpdate = async () => {
+    setError("");
+    setSuccess("");
+    
+    if (!name || !email) {
+      setError("Please fill in all fields");
+      return;
+    }
+
     try {
-      const response = await axios.post(`${API_URL}/update_profile`, { 
+      const response = await axios.post(`${API_URL}/update_profile`, {
         id: 1, // Replace with actual user ID from session
-        name, 
-        email 
+        name,
+        email
       });
-      
-      if ((response.data as { success: boolean }).success) {
+
+      if (response.data.success) {
         setSuccess("Profile updated successfully");
         setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError(response.data.error || "Update failed");
       }
-    } catch (err) {
-      setError("Update failed. Please try again.");
+    } catch (err: any) {
+      setError(err.response?.data?.error || "An error occurred during update");
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <Card className="max-w-2xl mx-auto shadow-lg rounded-xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold text-gray-800">Account Settings</CardTitle>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="max-w-2xl mx-auto shadow-xl rounded-2xl border border-gray-200">
+        <CardHeader className="bg-blue-50 rounded-t-2xl">
+          <CardTitle className="text-3xl font-bold text-gray-800">
+            Account Settings
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6 px-8 pb-8">
+        <CardContent className="space-y-6 px-8 py-8">
           <div className="space-y-4">
-            <div>
-              <label>Full Name:</label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Full Name
+              </label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="rounded-lg py-2 px-4"
+                className="rounded-xl py-3 px-4 text-base focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div>
-              <label>Email:</label>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Email Address
+              </label>
               <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="rounded-lg py-2 px-4"
+                className="rounded-xl py-3 px-4 text-base focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-            {success && <p className="text-green-600 text-sm">{success}</p>}
-            <Button 
+
+            {error && (
+              <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm">
+                {success}
+              </div>
+            )}
+
+            <Button
               onClick={handleUpdate}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-all"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:from-blue-700 hover:to-blue-600 transition-all"
             >
               Update Profile
             </Button>

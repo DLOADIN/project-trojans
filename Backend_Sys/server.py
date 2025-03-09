@@ -67,7 +67,28 @@ def login():
         cursor.close()
         conn.close()
 
-# Add to server.py
+
+@app.route('/get_current_user', methods=['GET'])
+def get_current_user():
+    # In production, get user ID from session/token
+    user_id = request.args.get('user_id', default=1, type=int)  # Temporary for demo
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, name, email FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        return jsonify({"success": True, "data": user}) if user else jsonify({"success": False, "error": "User not found"}), 404
+    except Exception as e:
+        logging.error(f"Error fetching user: {str(e)}")
+        return jsonify({"success": False, "error": "Server error"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 
 @app.route('/signup', methods=['POST'])
 def signup():

@@ -18,7 +18,6 @@ interface ProcessingStatus {
   status: 'processing' | 'completed' | 'error';
   progress: number;
   processed?: boolean;
-  accuracy?: number; 
 }
 
 const VideoUpload = () => {
@@ -159,7 +158,7 @@ const VideoUpload = () => {
                       <h3 className="text-lg font-medium mb-2">Video Analysis</h3>
                       {processingStatus?.status === 'completed' && (
                           <div className="mt-2 text-sm text-green-600">
-                              Analysis complete! Accuracy: {processingStatus.accuracy}%
+                              Analysis complete! Accuracy
                           </div>
                       )}
                       {processing && processingStatus?.status === 'processing' && (
