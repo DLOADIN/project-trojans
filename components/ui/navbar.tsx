@@ -30,9 +30,9 @@ export function Navbar() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Link href="/Dashboard">
+            <Link href="/Login">
               <button className="bg-gray-900 text-white rounded-full px-6 py-2.5 text-[13px]">
-                Get Started
+                LOGIN
               </button>
             </Link>
           </div>

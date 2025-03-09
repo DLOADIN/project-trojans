@@ -1,18 +1,19 @@
 "use client"
 
 import Link from "next/link"
-import { Home, Upload, ChartNoAxesCombined, Film } from "lucide-react"
+import { Home, Upload, ChartNoAxesCombined, Settings2Icon, } from "lucide-react"
 
 const menuItems = [
   { name: "Home", icon: Home, href: "/Dashboard" },
   { name: "Upload", icon: Upload, href: "/Dashboard/upload" },
   { name: "Analytics", icon: ChartNoAxesCombined, href: "/Dashboard/Analytics" }, 
-  { name: "Highlights", icon: Film, href: "/Dashboard/highlights" }  
+  // { name: "Highlights", icon: Film, href: "/Dashboard/highlights" }  
+  { name: "Settings", icon: Settings2Icon, href: "/Dashboard/Settings" }, 
 ]
 
 export function Sidebar() {
   return (
-    <div className="flex h-screen w-[240px] flex-col border-r border-[#f1f1f1] bg-green-700 rounded-r-2xl">
+    <div className="flex h-screen w-[240px] flex-col border-r border-[#f1f1f1] bg-black rounded-r-2xl">
       <div className="flex h-[60px] items-center px-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-[#00D959] rounded-full flex items-center justify-center">

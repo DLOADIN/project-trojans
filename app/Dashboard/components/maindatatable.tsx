@@ -5,6 +5,11 @@ import { RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import axios from "axios";
+import {Input} from "../ui/input";
+import { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectLabel, SelectItem,SelectSeparator,
+SelectScrollUpButton,
+SelectScrollDownButton } from "../ui/select"
+
 
 interface AccidentData {
   id: number;
@@ -42,22 +47,58 @@ export default function MainDataTable() {
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <Card className="w-full">
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [severityFilter, setSeverityFilter] = useState<string>("");
+
+  const filteredData = data.filter((item) => {
+    const itemDate = new Date(item.timestamp);
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+
+    return (
+        (!start || itemDate >= start) &&
+        (!end || itemDate <= end) &&
+        (!severityFilter || item.severity_level === severityFilter)
+    );
+  });
+
+return (
+  <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Accident Records</CardTitle>
-        <Button
-          onClick={fetchData}
-          variant="outline"
-          size="sm"
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          <span className="ml-2">Refresh</span>
-        </Button>
+          <CardTitle>Accident Records</CardTitle>
+          <div className="flex gap-4">
+              <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  placeholder="Start Date"
+              />
+              <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  placeholder="End Date"
+              />
+              <Select value={severityFilter} onValueChange={setSeverityFilter} >
+                  <SelectTrigger className="w-[180px] rounded-lg bg-white">
+                      <SelectValue placeholder="Severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="fatal">Fatal</SelectItem>
+                  </SelectContent>
+              </Select>
+              <Button onClick={fetchData} variant="outline" size="sm" disabled={loading}>
+                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                  <span className="ml-2">Refresh</span>
+              </Button>
+          </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
+      {loading ? (
           <div className="text-center py-4">Loading data...</div>
         ) : error ? (
           <div className="text-center text-red-600 py-4">{error}</div>
@@ -94,6 +135,6 @@ export default function MainDataTable() {
           </div>
         )}
       </CardContent>
-    </Card>
-  );
+  </Card>
+);
 }

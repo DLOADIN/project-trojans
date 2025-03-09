@@ -8,6 +8,7 @@ from datetime import datetime
 import subprocess
 import mysql.connector
 from dotenv import load_dotenv
+from flask import request, jsonify
 
 load_dotenv()
 
@@ -39,8 +40,85 @@ def get_db_connection():
     except mysql.connector.Error as err:
         logging.error(f"Database connection error: {err}")
         return None
+    
 
-# Upload video endpoint
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection error"}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+
+        if user and  password:
+            return jsonify({"success": True, "message": "Login successful"})
+        else:
+            return jsonify({"success": False, "message": "Invalid email or password"}), 401
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Add to server.py
+
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    name = data.get('name')
+    email = data.get('email')
+    password = data.get('password')
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection error"}), 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO users (name, email, password) VALUES (%s, %s, %s)",
+                     (name, email, password))
+        conn.commit()
+        return jsonify({"success": True, "message": "User created successfully"})
+    except mysql.connector.IntegrityError:
+        return jsonify({"success": False, "message": "Email already exists"}), 400
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    data = request.get_json()
+    user_id = data.get('id')
+    new_name = data.get('name')
+    new_email = data.get('email')
+    new_password = data.get('password')
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection error"}), 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET name = %s, email = %s, password = %s WHERE id = %s",
+                     (new_name, new_email, new_password,  user_id))
+        conn.commit()
+        return jsonify({"success": True, "message": "Profile updated successfully"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 @app.route("/upload", methods=["POST"])
 def upload_video():
     if "file" not in request.files:
@@ -59,7 +137,6 @@ def upload_video():
     threading.Thread(target=process_single_video, args=(video_path, video_filename), daemon=True).start()
     return jsonify({"status": "success", "videoUrl": video_filename}), 200
 
-# Process video in background
 def process_single_video(video_path, filename):
     try:
         processing_videos[filename]["progress"] = 10
@@ -69,6 +146,7 @@ def process_single_video(video_path, filename):
         if result.returncode == 0:
             processing_videos[filename]["status"] = "completed"
             processing_videos[filename]["progress"] = 100
+            processing_videos[filename]["accuracy"] = result.stdout.strip()  # Add accuracy to processing_videos
             logging.info(f"Processed video: {output_path}")
         else:
             processing_videos[filename]["status"] = "error"
