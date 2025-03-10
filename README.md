@@ -143,7 +143,7 @@ cd RoadGuard-Rwanda
 
 1. Start the Flask backend:
    ```bash
-   cd backend
+   cd Backend_Sys
    python app.py
    ```
 
