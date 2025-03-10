@@ -1,6 +1,6 @@
 # **Accident Detection System**
 
-This is an **Accident Detection System** that uses machine learning to detect accidents in video footage. The system consists of a **frontend** built with **Next.js**, a **backend** built with **Flask**, and a ** admin dashboard** for managing and analyzing accident data.
+This is an **Accident Detection System** that uses machine learning to detect accidents in video footage. The system consists of a **frontend** built with **Next.js**, a **backend** built with **Flask**, and an admin dashboard for managing and analyzing accident data.
 
 ---
 
