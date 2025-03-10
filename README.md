@@ -1,6 +1,6 @@
 # **Accident Detection System**
 
-This is an **Accident Detection System** that uses machine learning to detect accidents in video footage. The system consists of a **frontend** built with **Next.js**, a **backend** built with **Flask**, and a **Streamlit admin dashboard** for managing and analyzing accident data.
+This is an **Accident Detection System** that uses machine learning to detect accidents in video footage. The system consists of a **frontend** built with **Next.js**, a **backend** built with **Flask**, and a ** admin dashboard** for managing and analyzing accident data.
 
 ---
 
@@ -62,7 +62,7 @@ cd RoadGuard-Rwanda
 
 1. Navigate to the `backend` folder:
    ```bash
-   cd backend
+   cd Backend_Sys
    ```
 
 2. Install Python dependencies:
@@ -72,11 +72,11 @@ cd RoadGuard-Rwanda
 
 3. Set up the MySQL database:
    - Create a database named `accident_detection`.
-   - Update the database credentials in `backend/config.py`.
+   - Update the database credentials in `backend/accident_detection.py`.
 
 4. Run the Flask server:
    ```bash
-   python app.py
+   python server.py
    ```
 
    The backend will be running at `http://localhost:5000`.
@@ -87,7 +87,7 @@ cd RoadGuard-Rwanda
 
 1. Navigate to the `frontend` folder:
    ```bash
-   cd frontend
+   cd ./
    ```
 
 2. Install Node.js dependencies:
@@ -104,22 +104,6 @@ cd RoadGuard-Rwanda
 
 ---
 
-### **5. Set Up the Admin Dashboard (Streamlit)**
-
-1. Navigate to the `admin` folder:
-   ```bash
-   cd admin
-   ```
-
-2. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-   The admin dashboard will be running at `http://localhost:8501`.
-
----
-
 ### **6. Set Up the Database**
 
 1. Ensure MySQL is running on your machine.
@@ -127,20 +111,33 @@ cd RoadGuard-Rwanda
 3. Run the following SQL query to create the `accidents` table:
 
    ```sql
-   CREATE TABLE IF NOT EXISTS accidents (
-       ID INT AUTO_INCREMENT PRIMARY KEY,
-       timestamp DATETIME NOT NULL,
-       location VARCHAR(255) NOT NULL,
-       severity_level ENUM('low', 'medium', 'high') NOT NULL,
-       severity_score FLOAT NOT NULL,
-       video_path VARCHAR(255) NOT NULL,
-       accuracy FLOAT NOT NULL
-   );
-   ```
+   SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+   START TRANSACTION;
 
-4. Update the database credentials in `backend/config.py` and `admin/admin.py`.
+   CREATE OR USE DATABASE accident_detection
+   
+   CREATE TABLE accidents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timestamp DATETIME,
+    location VARCHAR(255),
+    severity_level VARCHAR(50),
+    severity_score FLOAT,
+    video_path VARCHAR(255),
+    accuracy FLOAT
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
----
+    CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+   DB_HOST = "localhost"
+   DB_USER = "root"
+   DB_PASSWORD = "your_password"
+   DB_DATABASE = "accident_detection"
+   DB_PORT = "your_port_number"
 
 ### **7. Run the Application**
 
@@ -150,28 +147,10 @@ cd RoadGuard-Rwanda
    python app.py
    ```
 
-2. Start the Next.js frontend:
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-
-3. Start the Streamlit admin dashboard:
-   ```bash
-   cd admin
-   streamlit run admin.py
-   ```
-
-4. Open your browser and navigate to:
-   - **Frontend**: `http://localhost:3000`
-   - **Admin Dashboard**: `http://localhost:8501`
-
----
-
 ## **Folder Structure**
 
 ```
-/RoadGuard-Rwanda/
+/AccidentAI-Rwanda/
 .project
 ├── app
 │   ├── Dashboard
