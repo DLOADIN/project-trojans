@@ -1,13 +1,10 @@
-"use client"
-
-import { OverviewSection } from "./components/overview-section"
-import { TrendCharts } from "./components/trend-charts"
 import AccidentTable from "./components/maindatatable"
+import type { Metadata } from "next";
 
-// export const metadata: Metadata = {
-//   title: "ACCIDENTAI",
-//   description: "Created by Uteramahoro Avellin Bonaparte & Manzi David",
-// };
+export const metadata: Metadata = {
+   title: "ACCIDENTAI",
+   description: "Created by Uteramahoro Avellin Bonaparte & Manzi David",
+ };
 
 export default function DashboardPage() {
   return (
