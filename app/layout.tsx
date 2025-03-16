@@ -11,7 +11,7 @@ const font = Inter({
 
 export const metadata: Metadata = {
   title: "ACCIDENTAI",
-  description: "Created by Uteramahoro Avellin Bonaparte & Manzi David",
+  description: "Created by Manzi Ivan",
 };
 
 export default function RootLayout({
@@ -20,7 +20,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AuthProvider>
     <html lang="en">
       <body
         className={`${font.variable} ${font.variable} antialiased`}
@@ -28,6 +27,5 @@ export default function RootLayout({
         {children}
       </body>
     </html>
-    </AuthProvider>
   );
 }

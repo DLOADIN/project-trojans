@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 import mysql.connector
 import bcrypt
 import subprocess
-
 # Load environment variables
 load_dotenv()
 
@@ -23,7 +22,7 @@ CORS(app, resources={
         "origins": "*",
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
-        "supports_credentials": True
+        "supports_credentials": True  
     }
 })
 
@@ -93,7 +92,7 @@ def login():
 
         if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
             session_token = secrets.token_urlsafe(32)
-            session_expiry = datetime.now() + timedelta(hours=1)  # Token expires in 1 hour
+            session_expiry = datetime.now() + timedelta(hours=4)  # Token expires in 4 hours
             cursor.execute("UPDATE users SET session_token = %s, session_expiry = %s WHERE id = %s",
                          (session_token, session_expiry, user['id']))
             conn.commit()
@@ -115,8 +114,8 @@ def login():
         cursor.close()
         conn.close()
 
-# Get current user endpoint
-@app.route('/get_current_user', methods=['GET'])
+
+
 @app.route('/get_current_user', methods=['GET'])
 def get_current_user():
     user = check_session()
@@ -306,19 +305,27 @@ def check_processing_status(filename):
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    user = check_session()
-    if not user:
-        return jsonify({"success": False}), 401
+    session_token = request.headers.get('Authorization')
+    if not session_token:
+        return jsonify({"success": False, "message": "No session token provided"}), 400
 
+    user = check_session()  # This function should validate the session token
+    if not user:
+        return jsonify({"success": False, "message": "Invalid session token"}), 401
+
+    # Invalidate the session token in the database
     conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection error"}), 500
+
     try:
         cursor = conn.cursor()
         cursor.execute("UPDATE users SET session_token = NULL, session_expiry = NULL WHERE id = %s",
                      (user['id'],))
         conn.commit()
-        return jsonify({"success": True})
+        return jsonify({"success": True, "message": "Logout successful"})
     except Exception as e:
-        return jsonify({"success": False}), 500
+        return jsonify({"success": False, "message": str(e)}), 500
     finally:
         cursor.close()
         conn.close()
