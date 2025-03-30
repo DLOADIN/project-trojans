@@ -61,6 +61,8 @@ function AccidentDataDashboard() {
     ? databaseData.reduce((sum, item) => sum + item.severity_score, 0) / totalAccidents
     : 0;
 
+  const roundedseverityScore = Math.round(averageSeverityScore);
+
   // Get accidents by month for line and bar charts
   const getAccidentsByMonth = () => {
     const monthlyData: Record<string, number> = {};
@@ -230,8 +232,8 @@ function AccidentDataDashboard() {
         {/* Donut Chart - Severity Levels */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>Pie Chart - Donut with Text</CardTitle>
-            <CardDescription>January - June 2024</CardDescription>
+            <CardTitle>UpTrend & Down Trend of Occured Accidents</CardTitle>
+            <CardDescription>January - April 2025</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -262,7 +264,7 @@ function AccidentDataDashboard() {
                   <div className="text-sm text-muted-foreground">Accidents</div>
                 </div>
                 <div className="text-sm text-muted-foreground mt-2">
-                  <p>Trending up by 5.2% this month</p>
+                  <p>Trending up by {roundedseverityScore}% this month</p>
                   <p>Showing total accidents for the last 6 months</p>
                 </div>
               </div>
@@ -300,7 +302,7 @@ function AccidentDataDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Accidents by Time */}
-        <Card>
+        {/* <Card>
           <CardHeader className="pb-2">
             <CardTitle>Accidents by Time</CardTitle>
             <CardDescription>Top accident time slots</CardDescription>
@@ -333,7 +335,7 @@ function AccidentDataDashboard() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Accidents by Location */}
         <Card>
@@ -371,6 +373,8 @@ function AccidentDataDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      
     </div>
   );
 }
