@@ -210,7 +210,8 @@ def upload_video():
     if file.filename == "":
         return jsonify({"status": "error", "message": "No file selected"}), 400
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    current_time = datetime.now() - timedelta(hours=2)
+    timestamp = current_time.strftime("%Y%m%d_%H%M%S")
     video_filename = f"video_{timestamp}.mp4"
     video_path = os.path.join(UPLOAD_DIRECTORY, video_filename)
     file.save(video_path)
@@ -300,6 +301,8 @@ def get_video_analysis(filename):
     except Exception as e:
         return jsonify({"status": "error", "message": f"Error processing analysis request: {str(e)}"}), 500
 
+
+
 # Fetch accident data
 @app.route('/fetch_database')
 def fetch_database():
@@ -317,6 +320,9 @@ def fetch_database():
     finally:
         cursor.close()
         conn.close()
+
+
+        
 
 # Stream video frames
 @app.route('/video_stream/<filename>')

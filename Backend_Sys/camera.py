@@ -2,7 +2,7 @@ import os
 import sys
 import cv2
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 import mysql.connector
 from twilio.rest import Client
 import pytz
@@ -93,7 +93,10 @@ def get_db_connection():
         logging.error(f"Database connection error: {err}")
         return None
 
+
+
 def save_accident_data(timestamp, location, severity_level, severity_score, video_filename, accuracy):
+    timestamp = (datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S") - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
     with db_connection() as conn:
         if conn is None:
             return
@@ -109,6 +112,8 @@ def save_accident_data(timestamp, location, severity_level, severity_score, vide
             send_twilio_alert(timestamp, location, severity_level, severity_score)
         except mysql.connector.Error as err:
             logging.error(f"Error saving accident data: {err}")
+
+
 
 @app.route("/upload", methods=["POST"])
 def upload_video():
@@ -127,6 +132,8 @@ def upload_video():
     processing_videos[video_filename] = {"status": "processing", "progress": 0}
     threading.Thread(target=process_single_video, args=(video_path, video_filename), daemon=True).start()
     return jsonify({"status": "success", "videoUrl": video_filename}), 200
+
+
 
 def process_single_video(video_path, filename):
     try:
@@ -182,7 +189,9 @@ def process_video(video_path, output_path=None):
         # Use this timestamp in the accident clip filename later
     except:
         # Fallback to current time if format is different
-        timestamp_str = datetime.now(pytz.timezone('Africa/Kigali')).strftime("%Y%m%d_%H%M%S")
+        # Subtract 2 hours from the current time for the fallback case
+        current_time = datetime.now(pytz.timezone('Africa/Kigali')) - timedelta(hours=2)
+        timestamp_str = current_time.strftime("%Y%m%d_%H%M%S")
 
     while True:
         ret, frame = video.read()
