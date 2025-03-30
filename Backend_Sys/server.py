@@ -312,7 +312,7 @@ def fetch_database():
     
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM accidents ORDER BY timestamp DESC")
+        cursor.execute("SELECT * FROM accidents ORDER BY id DESC")
         data = cursor.fetchall()
         return jsonify({"data": data})
     except Exception as e:
