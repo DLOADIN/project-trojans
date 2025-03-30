@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import mysql.connector
 import bcrypt
 import subprocess
+from twilio.rest import Client  # Import Twilio client
 # Load environment variables
 load_dotenv()
 
@@ -39,6 +40,52 @@ os.makedirs(STREAM_FRAMES_DIR, exist_ok=True)
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 processing_videos = {}
+
+# Twilio configuration
+# Replace hardcoded Twilio credentials with:
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")  # Using your Twilio number from the screenshot
+RECIPIENT_PHONE_NUMBER = "+250791291003" # The verified caller ID from your second screenshot
+
+# Initialize Twilio client
+def get_twilio_client():
+    try:
+        return Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+    except Exception as e:
+        logging.error(f"Failed to initialize Twilio client: {e}")
+        return None
+
+# Function to send accident notification via SMS
+def send_accident_notification(accident_data):
+    client = get_twilio_client()
+    if not client:
+        logging.error("Twilio client not available. Cannot send notification.")
+        return False
+    
+    try:
+        # Create message body with accident information
+        message_body = f"""
+        ACCIDENT ALERT!
+        Time: {accident_data.get('timestamp', 'Unknown')}
+        Location: {accident_data.get('location', 'Unknown')}
+        Severity: {accident_data.get('severity_score', 'Unknown')}
+        Confidence: {accident_data.get('severity_level', 'Unknown')}%
+        Accuracy: {accident_data.get('accuracy', 'Unknown')}
+        """
+        
+        # Send the message
+        message = client.messages.create(
+            body=message_body,
+            from_=TWILIO_PHONE_NUMBER,
+            to=RECIPIENT_PHONE_NUMBER
+        )
+        
+        logging.info(f"Accident notification sent. SID: {message.sid}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send accident notification: {e}")
+        return False
 
 # Database connection
 def get_db_connection():
@@ -113,8 +160,6 @@ def login():
     finally:
         cursor.close()
         conn.close()
-
-
 
 @app.route('/get_current_user', methods=['GET'])
 def get_current_user():
@@ -220,9 +265,6 @@ def upload_video():
     threading.Thread(target=process_single_video, args=(video_path, video_filename), daemon=True).start()
     return jsonify({"status": "success", "videoUrl": video_filename}), 200
 
-
-
-
 # Process single video
 def process_single_video(video_path, filename):
     try:
@@ -235,6 +277,26 @@ def process_single_video(video_path, filename):
             processing_videos[filename]["progress"] = 100
             processing_videos[filename]["accuracy"] = result.stdout.strip()  # Add accuracy to processing_videos
             logging.info(f"Processed video: {output_path}")
+            
+            # Check for accident detection and send notification if needed
+            conn = get_db_connection()
+            if conn:
+                try:
+                    cursor = conn.cursor(dictionary=True)
+                    # Look for the latest accident record related to this video
+                    video_name = os.path.splitext(filename)[0]
+                    cursor.execute("SELECT * FROM accidents WHERE video_path LIKE %s ORDER BY timestamp DESC LIMIT 1", 
+                                  (f"%{video_name}%",))
+                    accident_data = cursor.fetchone()
+                    
+                    if accident_data:
+                        # Send SMS notification with accident details
+                        send_accident_notification(accident_data)
+                except Exception as e:
+                    logging.error(f"Error checking for accident data: {e}")
+                finally:
+                    cursor.close()
+                    conn.close()
         else:
             processing_videos[filename]["status"] = "error"
             logging.error(f"Error processing video: {result.stderr}")
@@ -245,7 +307,55 @@ def process_single_video(video_path, filename):
         if os.path.exists(video_path):
             os.remove(video_path)
 
-
+# Store accident information and send notification
+@app.route('/report_accident', methods=['POST'])
+def report_accident():
+    data = request.get_json()
+    user = check_session()
+    
+    if not user and not data.get('bypass_auth'):
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    # Expected data fields: location, severity, confidence, video_path
+    required_fields = ['location', 'severity', 'confidence', 'video_path']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"success": False, "message": f"Missing required field: {field}"}), 400
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection error"}), 500
+    
+    try:
+        cursor = conn.cursor()
+        timestamp = data.get('timestamp', datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        
+        # Insert accident record into database
+        cursor.execute(
+            "INSERT INTO accidents (timestamp, location, severity_level, severity_score, video_path, accuracy) VALUES (%s, %s, %s, %s, %s, %s)",
+            (timestamp, data['location'], data['severity_level'], data['severity_score'], data['video_path'], user['id'] if user else None)
+        )
+        conn.commit()
+        accident_id = cursor.lastrowid
+        
+        # Get the full accident record
+        cursor.execute("SELECT * FROM accidents WHERE id = %s", (accident_id,))
+        accident_data = cursor.fetchone()
+        
+        # Send notification via Twilio
+        notification_sent = send_accident_notification(accident_data)
+        
+        return jsonify({
+            "success": True, 
+            "message": "Accident reported successfully",
+            "notification_sent": notification_sent,
+            "accident_id": accident_id
+        })
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 # Fetch uploaded videos for the current user
 @app.route('/get_user_videos', methods=['GET'])
@@ -259,9 +369,6 @@ def get_user_videos():
         return jsonify({"success": True, "videos": video_files})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
-
-
-
 
 @app.route('/get_video_analysis/<filename>')
 def get_video_analysis(filename):
@@ -301,8 +408,6 @@ def get_video_analysis(filename):
     except Exception as e:
         return jsonify({"status": "error", "message": f"Error processing analysis request: {str(e)}"}), 500
 
-
-
 # Fetch accident data
 @app.route('/fetch_database')
 def fetch_database():
@@ -320,9 +425,6 @@ def fetch_database():
     finally:
         cursor.close()
         conn.close()
-
-
-        
 
 # Stream video frames
 @app.route('/video_stream/<filename>')
@@ -354,6 +456,29 @@ def check_processing_status(filename):
     processed_path = os.path.join(PROCESSED_DIRECTORY, filename)
     return jsonify({"status": "completed", "processed": os.path.exists(processed_path)})
 
+# Test SMS endpoint (for debugging)
+@app.route('/test_sms', methods=['POST'])
+def test_sms():
+    user = check_session()
+    if not user:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    test_message = data.get('message', 'This is a test accident notification from your accident detection system.')
+    
+    client = get_twilio_client()
+    if not client:
+        return jsonify({"success": False, "message": "Twilio client not available"}), 500
+    
+    try:
+        message = client.messages.create(
+            body=test_message,
+            from_=TWILIO_PHONE_NUMBER,
+            to=RECIPIENT_PHONE_NUMBER
+        )
+        return jsonify({"success": True, "message": "Test SMS sent", "sid": message.sid})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/logout', methods=['POST'])
 def logout():

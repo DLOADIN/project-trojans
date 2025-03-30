@@ -1,6 +1,5 @@
-from tensorflow.keras.models import load_model
+from tensorflow.keras.models import model_from_json
 import numpy as np
-import json
 
 class AccidentDetectionModel:
     class_nums = ["No Accident", "Accident"]  # Ensure correct order
@@ -8,14 +7,19 @@ class AccidentDetectionModel:
     def __init__(self, model_json_file, model_weights_file):
         # Load model architecture from JSON
         with open(model_json_file, 'r') as json_file:
-            model_json = json_file.read()                                                                                                                                                                   
+            model_json = json_file.read()
             
-        # Load model weights
-        self.loaded_model = load_model(model_weights_file)
+        # Create model from JSON and load weights
+        self.loaded_model = model_from_json(model_json)
+        self.loaded_model.load_weights(model_weights_file)
+        
+        # Compile the model
+        self.loaded_model.compile(loss='sparse_categorical_crossentropy', 
+                                  optimizer='adam', 
+                                  metrics=['accuracy'])
 
     def predict_accident(self, img):
-        # Ensure img is float32 (model expects normalized input)
-        img = img.astype("float32") / 255.0  # Normalize
+        img = img.astype("float32") / 255.0 
         
         # Make prediction
         preds = self.loaded_model.predict(img)

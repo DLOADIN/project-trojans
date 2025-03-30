@@ -5,6 +5,7 @@ tensorflow
 keras
 # streamlit
 Mysql
+bcrypt
 plotly
 flask
 twilio

@@ -55,3 +55,4 @@ next-env.d.ts
 /Backend_Sys/processed_videos/
 /Backend_Sys/stream_frames/
 /Backend_Sys/camera.py/
+/.venv
