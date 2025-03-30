@@ -148,6 +148,9 @@ def process_single_video(video_path, filename):
         if os.path.exists(video_path):
             os.remove(video_path)
 
+
+
+
 def process_video(video_path, output_path=None):
     video = cv2.VideoCapture(video_path)
     if not video.isOpened():
@@ -171,6 +174,16 @@ def process_video(video_path, output_path=None):
     accident_clip_path = None
     accident_start = None
 
+    # Extract timestamp from video filename if possible
+    # Assuming format like video_20250330_123045.mp4
+    try:
+        timestamp_str = video_filename.split('_', 1)[1]  # Get everything after "video_"
+        timestamp_str = timestamp_str.split('.')[0]  # Remove extension
+        # Use this timestamp in the accident clip filename later
+    except:
+        # Fallback to current time if format is different
+        timestamp_str = datetime.now(pytz.timezone('Africa/Kigali')).strftime("%Y%m%d_%H%M%S")
+
     while True:
         ret, frame = video.read()
         if not ret:
@@ -190,8 +203,8 @@ def process_video(video_path, output_path=None):
         # Collect data only if accident is detected
         if pred == "Accident":
             if writer is None:
-                timestamp = datetime.now(pytz.timezone('Africa/Kigali')).strftime("%Y%m%d_%H%M%S")
-                accident_clip_path = os.path.join("accident_clips", f"accident_{timestamp}.mp4")
+                # Use the original video's timestamp in the accident clip name
+                accident_clip_path = os.path.join("accident_clips", f"accident_{timestamp_str}.mp4")
                 os.makedirs(os.path.dirname(accident_clip_path), exist_ok=True)
                 writer = cv2.VideoWriter(accident_clip_path, fourcc, fps, (width, height))
                 accident_start = datetime.now(pytz.timezone('Africa/Kigali'))
@@ -218,14 +231,18 @@ def process_video(video_path, output_path=None):
         else:
             severity_level = "fatal"
 
+        # Also save the original video filename to help with lookup later
         save_accident_data(
             timestamp=accident_start.strftime("%Y-%m-%d %H:%M:%S"),
             location=LOCATION,
             severity_level=severity_level,
             severity_score=avg_severity,
-            video_filename=accident_clip_path,
+            video_filename=f"{accident_clip_path}|{video_filename}",  # Include original filename
             accuracy=avg_accuracy
         )
+        
+        # Print the accuracy to stdout so the server can capture it
+        print(avg_accuracy)
 
     # Cleanup resources
     video.release()
@@ -236,6 +253,7 @@ def process_video(video_path, output_path=None):
 
     logging.info(f"Video processing completed: {video_filename}")
     return os.path.basename(output_path) if output_path else video_filename
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

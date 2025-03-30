@@ -219,6 +219,9 @@ def upload_video():
     threading.Thread(target=process_single_video, args=(video_path, video_filename), daemon=True).start()
     return jsonify({"status": "success", "videoUrl": video_filename}), 200
 
+
+
+
 # Process single video
 def process_single_video(video_path, filename):
     try:
@@ -241,6 +244,8 @@ def process_single_video(video_path, filename):
         if os.path.exists(video_path):
             os.remove(video_path)
 
+
+
 # Fetch uploaded videos for the current user
 @app.route('/get_user_videos', methods=['GET'])
 def get_user_videos():
@@ -253,6 +258,47 @@ def get_user_videos():
         return jsonify({"success": True, "videos": video_files})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+
+
+@app.route('/get_video_analysis/<filename>')
+def get_video_analysis(filename):
+    # Extract the timestamp from the filename format "video_YYYYMMDD_HHMMSS.mp4"
+    try:
+        # Parse timestamp from filename (assuming format like "video_20250330_123045.mp4")
+        video_name = os.path.splitext(filename)[0]  # Remove extension
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"status": "error", "message": "Database connection error"}), 500
+        
+        try:
+            cursor = conn.cursor(dictionary=True)
+            # Look for accidents that reference this video in video_path
+            cursor.execute("SELECT * FROM accidents WHERE video_path LIKE %s ORDER BY timestamp DESC LIMIT 1", 
+                          (f"%{video_name}%",))
+            accident_data = cursor.fetchone()
+            
+            if accident_data:
+                return jsonify({"status": "success", "data": accident_data})
+            else:
+                # If no direct match, get the most recent accident
+                # This is a fallback if the video filename doesn't match exactly
+                cursor.execute("SELECT * FROM accidents ORDER BY timestamp DESC LIMIT 1")
+                latest_accident = cursor.fetchone()
+                
+                if latest_accident:
+                    return jsonify({"status": "success", "data": latest_accident})
+                else:
+                    return jsonify({"status": "error", "message": "No analysis data found"}), 404
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+        finally:
+            cursor.close()
+            conn.close()
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Error processing analysis request: {str(e)}"}), 500
 
 # Fetch accident data
 @app.route('/fetch_database')
