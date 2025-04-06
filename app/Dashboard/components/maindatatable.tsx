@@ -32,7 +32,7 @@ export default function MainDataTable() {
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  const [severityFilter, setSeverityFilter] = useState<string>("");
+  const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchData = async () => {
@@ -66,11 +66,17 @@ export default function MainDataTable() {
     const itemDate = new Date(item.timestamp);
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
+    
+    // Add a day to end date to include the entire end date (up to 23:59:59)
+    if (end) {
+      end.setDate(end.getDate() + 1);
+      end.setMilliseconds(end.getMilliseconds() - 1);
+    }
 
     return (
       (!start || itemDate >= start) &&
       (!end || itemDate <= end) &&
-      (!severityFilter || severityFilter === "all" || item.severity_level === severityFilter)
+      (severityFilter === "all" || item.severity_level === severityFilter)
     );
   });
 
@@ -131,8 +137,11 @@ export default function MainDataTable() {
     document.body.removeChild(link);
   };
 
-  const handleSeverityChange = (value: string) => {
-    setSeverityFilter(value);
+  const clearFilters = () => {
+    setStartDate("");
+    setEndDate("");
+    setSeverityFilter("all");
+    setCurrentPage(1);
   };
 
   return (
@@ -140,38 +149,54 @@ export default function MainDataTable() {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Accident Records</CardTitle>
         <div className="flex gap-4">
-          <Input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            placeholder="Start Date"
-          />
-          <Input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            placeholder="End Date"
-          />
-          <Select value={severityFilter} onValueChange={handleSeverityChange}>
-            <SelectTrigger className="w-[180px] rounded-lg bg-white">
-              <SelectValue placeholder="Severity" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="fatal">Fatal</SelectItem>
-              <SelectItem value="none">None</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={fetchData} variant="outline" size="sm" disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            <span className="ml-2">Refresh</span>
-          </Button>
-          <Button onClick={generateReport} variant="outline" size="sm" disabled={loading}>
-            <Download className="h-4 w-4" />
-            <span className="ml-2">Export CSV</span>
-          </Button>
+          <div className="flex flex-col">
+            <label htmlFor="start-date" className="text-xs text-gray-500 mb-1">Start Date</label>
+            <Input
+              id="start-date"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="end-date" className="text-xs text-gray-500 mb-1">End Date</label>
+            <Input
+              id="end-date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="severity-filter" className="text-xs text-gray-500 mb-1">Severity</label>
+            <Select value={severityFilter} onValueChange={setSeverityFilter}>
+              <SelectTrigger id="severity-filter" className="w-[180px] h-9 rounded-lg bg-white">
+                <SelectValue placeholder="All Severities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Severities</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="fatal">Fatal</SelectItem>
+                <SelectItem value="none">None</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end gap-2">
+            <Button onClick={clearFilters} variant="outline" size="sm" className="h-9">
+              Clear Filters
+            </Button>
+            <Button onClick={fetchData} variant="outline" size="sm" disabled={loading} className="h-9">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <span className="ml-2">Refresh</span>
+            </Button>
+            <Button onClick={generateReport} variant="outline" size="sm" disabled={loading || filteredData.length === 0} className="h-9">
+              <Download className="h-4 w-4" />
+              <span className="ml-2">Export CSV</span>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -180,7 +205,7 @@ export default function MainDataTable() {
         ) : error ? (
           <div className="text-center text-red-600 py-4">{error}</div>
         ) : filteredData.length === 0 ? (
-          <div className="text-center text-gray-500 py-4">No accident data available</div>
+          <div className="text-center text-gray-500 py-4">No accident data available for the selected filters</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
