@@ -201,8 +201,8 @@ def process_video(video_path, output_path=None):
         # Process frame (simulated logic)
         if frame_count % 100 == 0:  # Simulate accident every 100 frames
             pred = "Accident"
-            severity_score = np.random.randint(50, 100)
-            accuracy = np.random.randint(80, 100)
+            severity_score = np.random.randint(30, 100)
+            accuracy = np.random.randint(70, 100)
             accident_detected = True
         else:
             pred = "No Accident"

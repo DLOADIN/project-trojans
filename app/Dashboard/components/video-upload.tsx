@@ -21,7 +21,7 @@ export default function VideoUpload() {
   const [progress, setProgress] = useState(0);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<AccidentAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState< AccidentAnalysis | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -223,7 +223,7 @@ export default function VideoUpload() {
                   <div className="text-sm">{analysis.severity_score ? 
                     analysis.severity_score.toFixed(1) + '%' : 'N/A'}</div>
                   
-                  <div className="text-sm font-medium">Detection Accuracy:</div>
+                  <div className="text-sm font-medium">Accuracy:</div>
                   <div className="text-sm">{analysis.accuracy ? 
                     analysis.accuracy.toFixed(1) + '%' : 'N/A'}</div>
                 </div>
