@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RefreshCw } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { RefreshCw, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "../ui/card";
 import { Button } from "../ui/button";
 import axios from "axios";
-import {Input} from "../ui/input";
-import { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectLabel, SelectItem,SelectSeparator,
-SelectScrollUpButton,
-SelectScrollDownButton } from "../ui/select"
-
+import { Input } from "../ui/input";
+import { 
+  Select, 
+  SelectValue, 
+  SelectTrigger, 
+  SelectContent, 
+  SelectItem
+} from "../ui/select";
 
 interface AccidentData {
   id: number;
@@ -21,11 +24,16 @@ interface AccidentData {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const ITEMS_PER_PAGE = 10;
 
 export default function MainDataTable() {
   const [data, setData] = useState<AccidentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [severityFilter, setSeverityFilter] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchData = async () => {
     try {
@@ -33,6 +41,8 @@ export default function MainDataTable() {
       const response = await axios.get<{ data: AccidentData[] }>(`${API_URL}/fetch_database`);
       setData(response.data.data);
       setError(null);
+      // Reset to first page when data is refreshed
+      setCurrentPage(1);
     } catch (err) {
       setError("Failed to fetch data. Please try again.");
       console.error("Error fetching data:", err);
@@ -47,9 +57,10 @@ export default function MainDataTable() {
     return () => clearInterval(interval);
   }, []);
 
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-  const [severityFilter, setSeverityFilter] = useState<string>("");
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [startDate, endDate, severityFilter]);
 
   const filteredData = data.filter((item) => {
     const itemDate = new Date(item.timestamp);
@@ -57,52 +68,118 @@ export default function MainDataTable() {
     const end = endDate ? new Date(endDate) : null;
 
     return (
-        (!start || itemDate >= start) &&
-        (!end || itemDate <= end) &&
-        (!severityFilter || item.severity_level === severityFilter)
+      (!start || itemDate >= start) &&
+      (!end || itemDate <= end) &&
+      (!severityFilter || severityFilter === "all" || item.severity_level === severityFilter)
     );
   });
 
-return (
-  <Card className="w-full">
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentPageData = filteredData.slice(startIndex, endIndex);
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
+  // Function to properly escape CSV values
+  const escapeCSV = (value: string) => {
+    // If value contains comma, quote, or newline, wrap in quotes and escape any quotes
+    if (/[",\n\r]/.test(value)) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+
+  const generateReport = () => {
+    // Create CSV content
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "ID,Time,Location,Severity,Score,Accuracy\n";
+    
+    // Export all filtered data, not just current page
+    filteredData.forEach(item => {
+      // Format the date and properly escape all values
+      const formattedDate = escapeCSV(new Date(item.timestamp).toLocaleString());
+      const formattedLocation = escapeCSV(item.location);
+      const formattedSeverity = escapeCSV(item.severity_level);
+      
+      const row = [
+        item.id,
+        formattedDate,
+        formattedLocation,
+        formattedSeverity,
+        item.severity_score.toFixed(2),
+        item.accuracy.toFixed(2) + "%"
+      ].join(",");
+      
+      csvContent += row + "\n";
+    });
+    
+    // Create download link and trigger download
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `accident-report-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSeverityChange = (value: string) => {
+    setSeverityFilter(value);
+  };
+
+  return (
+    <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Accident Records</CardTitle>
-          <div className="flex gap-4">
-              <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  placeholder="Start Date"
-              />
-              <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  placeholder="End Date"
-              />
-              <Select value={severityFilter} onValueChange={setSeverityFilter} >
-                  <SelectTrigger className="w-[180px] rounded-lg bg-white">
-                      <SelectValue placeholder="Severity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="fatal">Fatal</SelectItem>
-                  </SelectContent>
-              </Select>
-              <Button onClick={fetchData} variant="outline" size="sm" disabled={loading}>
-                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                  <span className="ml-2">Refresh</span>
-              </Button>
-          </div>
+        <CardTitle>Accident Records</CardTitle>
+        <div className="flex gap-4">
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            placeholder="Start Date"
+          />
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            placeholder="End Date"
+          />
+          <Select value={severityFilter} onValueChange={handleSeverityChange}>
+            <SelectTrigger className="w-[180px] rounded-lg bg-white">
+              <SelectValue placeholder="Severity" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="fatal">Fatal</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={fetchData} variant="outline" size="sm" disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <span className="ml-2">Refresh</span>
+          </Button>
+          <Button onClick={generateReport} variant="outline" size="sm" disabled={loading}>
+            <Download className="h-4 w-4" />
+            <span className="ml-2">Export CSV</span>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
-      {loading ? (
+        {loading ? (
           <div className="text-center py-4">Loading data...</div>
         ) : error ? (
           <div className="text-center text-red-600 py-4">{error}</div>
-        ) : data.length === 0 ? (
+        ) : filteredData.length === 0 ? (
           <div className="text-center text-gray-500 py-4">No accident data available</div>
         ) : (
           <div className="overflow-x-auto">
@@ -118,7 +195,7 @@ return (
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {data.map((item) => (
+                {currentPageData.map((item) => (
                   <tr key={item.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -135,6 +212,36 @@ return (
           </div>
         )}
       </CardContent>
-  </Card>
-);
+      {filteredData.length > 0 && (
+        <CardFooter className="flex justify-between items-center px-6 py-4 border-t">
+          <div className="text-sm text-gray-500">
+            Showing {startIndex + 1}-{Math.min(endIndex, filteredData.length)} of {filteredData.length} records
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handlePreviousPage} 
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="ml-1">Previous</span>
+            </Button>
+            <div className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages || 1}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleNextPage} 
+              disabled={currentPage === totalPages || totalPages === 0}
+            >
+              <span className="mr-1">Next</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardFooter>
+      )}
+    </Card>
+  );
 }
