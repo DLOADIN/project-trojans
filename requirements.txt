@@ -45,3 +45,8 @@ flask-cors
 #   173  python3 camera.py
 #   174  pip install tensorflow
 #   175  python3 camera.py
+
+
+Logincredentials
+Password = Password
+Email = ganzamarnaud@gmail.com
