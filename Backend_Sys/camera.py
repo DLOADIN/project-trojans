@@ -208,7 +208,7 @@ def process_video(video_path, output_path=None):
             pred = "No Accident"
             severity_score = 0.0
             accuracy = 95.0
-
+            
         # Collect data only if accident is detected
         if pred == "Accident":
             if writer is None:
