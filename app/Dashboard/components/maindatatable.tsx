@@ -150,7 +150,7 @@ export default function MainDataTable() {
         <CardTitle>Accident Records</CardTitle>
         <div className="flex gap-4">
           <div className="flex flex-col">
-            <label htmlFor="start-date" className="text-xs text-gray-500 mb-1">Start Date</label>
+            <label htmlFor="start-date" className="text-xs text-gray-500 mb-1">Select Day</label>
             <Input
               id="start-date"
               type="date"
@@ -159,7 +159,7 @@ export default function MainDataTable() {
               className="h-9"
             />
           </div>
-          <div className="flex flex-col">
+          {/* <div className="flex flex-col">
             <label htmlFor="end-date" className="text-xs text-gray-500 mb-1">End Date</label>
             <Input
               id="end-date"
@@ -168,7 +168,7 @@ export default function MainDataTable() {
               onChange={(e) => setEndDate(e.target.value)}
               className="h-9"
             />
-          </div>
+          </div> */}
           <div className="flex flex-col">
             <label htmlFor="severity-filter" className="text-xs text-gray-500 mb-1">Severity</label>
             <Select value={severityFilter} onValueChange={setSeverityFilter}>
