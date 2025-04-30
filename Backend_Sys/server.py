@@ -444,10 +444,6 @@ def video_stream(filename):
     
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-# Get video file
-@app.route('/get_video/<filename>')
-def get_video(filename):
-    return send_from_directory(PROCESSED_DIRECTORY, filename)
 
 # Check processing status
 @app.route('/processing_status/<filename>')
@@ -457,29 +453,9 @@ def check_processing_status(filename):
     processed_path = os.path.join(PROCESSED_DIRECTORY, filename)
     return jsonify({"status": "completed", "processed": os.path.exists(processed_path)})
 
-# Test SMS endpoint (for debugging)
-@app.route('/test_sms', methods=['POST'])
-def test_sms():
-    user = check_session()
-    if not user:
-        return jsonify({"success": False, "message": "Unauthorized"}), 401
-    
-    data = request.get_json()
-    test_message = data.get('message', 'This is a test accident notification from your accident detection system.')
-    
-    client = get_twilio_client()
-    if not client:
-        return jsonify({"success": False, "message": "Twilio client not available"}), 500
-    
-    try:
-        message = client.messages.create(
-            body=test_message,
-            from_=TWILIO_PHONE_NUMBER,
-            to=RECIPIENT_PHONE_NUMBER
-        )
-        return jsonify({"success": True, "message": "Test SMS sent", "sid": message.sid})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+
+
+
 
 @app.route('/logout', methods=['POST'])
 def logout():
