@@ -1,277 +1,328 @@
-import os
-import sys
 import cv2
+from detection import AccidentDetectionModel
 import numpy as np
-from datetime import datetime, timedelta
+import os
 import mysql.connector
-from twilio.rest import Client
-import pytz
-from dotenv import load_dotenv
-from contextlib import contextmanager
-import threading
+from datetime import datetime
 import time
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import subprocess
-import secrets
-import mysql.connector
+import json
 from twilio.rest import Client
-import pytz
 import logging
+from dotenv import load_dotenv
 
-
-# Load environment variables
 load_dotenv()
 
-# Twilio credentials
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
-ADMIN_PHONE_NUMBER = os.getenv("ADMIN_PHONE_NUMBER")
+# Twilio configuration
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
+RECIPIENT_PHONE_NUMBER = "+250791291003"  
 
-# Database credentials
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_USER = os.getenv("DB_USER", "root")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-DB_DATABASE = os.getenv("DB_DATABASE", "accident_detection")
-DB_PORT = int(os.getenv("DB_PORT", 3306))
-LOCATION = os.getenv("LOCATION", "Kigali")
+model = AccidentDetectionModel("model.json", 'model_weights.h5')
+font = cv2.FONT_HERSHEY_SIMPLEX
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO)
 
-# Twilio alert template
-TWILIO_ALERT_TEMPLATE = """🚨 Accident Detected!
-Time: {timestamp}
-Location: {location}
-Severity: {severity_level.capitalize()} ({severity_score}%)
-Immediate attention is required!"""
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': '',
+    'database': 'accident_detection',
+    'port': 3306
+}
 
-app = Flask(__name__)
-CORS(app)
+# Create uploads directory if it doesn't exist
+UPLOADS_DIR = "uploads"
+if not os.path.exists(UPLOADS_DIR):
+    os.makedirs(UPLOADS_DIR)
 
-UPLOAD_DIRECTORY = "uploads"
-PROCESSED_DIRECTORY = "processed_videos"
-processing_videos = {}
-
-def send_twilio_alert(timestamp, location, severity_level, severity_score):
+def get_twilio_client():
     try:
-        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-        message = client.messages.create(
-            body=TWILIO_ALERT_TEMPLATE.format(
-                timestamp=timestamp,
-                location=location,
-                severity_level=severity_level,
-                severity_score=severity_score
-            ),
-            from_=TWILIO_PHONE_NUMBER,
-            to=ADMIN_PHONE_NUMBER
-        )
-        logging.info(f"Twilio alert sent: {message.sid}")
+        return Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
     except Exception as e:
-        logging.error(f"Twilio error: {str(e)}")
-
-@contextmanager
-def db_connection():
-    conn = get_db_connection()
-    try:
-        yield conn
-    finally:
-        if conn:
-            conn.close()
-
-def get_db_connection():
-    try:
-        return mysql.connector.connect(
-            host=DB_HOST,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            database=DB_DATABASE,
-            port=DB_PORT
-        )
-    except mysql.connector.Error as err:
-        logging.error(f"Database connection error: {err}")
+        logging.error(f"Failed to initialize Twilio client: {e}")
         return None
 
-
-
-def save_accident_data(timestamp, location, severity_level, severity_score, video_filename, accuracy):
-    timestamp = (datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S") - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
-    with db_connection() as conn:
-        if conn is None:
-            return
-        try:
-            cursor = conn.cursor()
-            query = """
-            INSERT INTO accidents (timestamp, location, severity_level, severity_score, video_path, accuracy)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(query, (timestamp, location, severity_level, float(severity_score), video_filename, float(accuracy)))
-            conn.commit()
-            logging.info(f"Data saved to database: {timestamp}, {location}, {severity_level}, {severity_score}, {video_filename}, {accuracy}")
-            send_twilio_alert(timestamp, location, severity_level, severity_score)
-        except mysql.connector.Error as err:
-            logging.error(f"Error saving accident data: {err}")
-
-
-
-@app.route("/upload", methods=["POST"])
-def upload_video():
-    if "file" not in request.files:
-        return jsonify({"status": "error", "message": "No file provided"}), 400
-
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"status": "error", "message": "No file selected"}), 400
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    video_filename = f"video_{timestamp}.mp4"
-    video_path = os.path.join(UPLOAD_DIRECTORY, video_filename)
-    file.save(video_path)
-
-    processing_videos[video_filename] = {"status": "processing", "progress": 0}
-    threading.Thread(target=process_single_video, args=(video_path, video_filename), daemon=True).start()
-    return jsonify({"status": "success", "videoUrl": video_filename}), 200
-
-
-
-def process_single_video(video_path, filename):
+def send_accident_notification(accident_data):
+    client = get_twilio_client()
+    if not client:
+        logging.error("Twilio client not available. Cannot send notification.")
+        return False
+    
     try:
-        processing_videos[filename]["progress"] = 10
-        output_path = os.path.join(PROCESSED_DIRECTORY, filename)
-        result = subprocess.run(["python", "camera.py", video_path], capture_output=True, text=True)
+        # Create message body with accident information
+        message_body = f"""
+        ACCIDENT ALERT!
+        Time: {accident_data.get('timestamp', 'Unknown')}
+        Location: {accident_data.get('location', 'Unknown')}
+        Severity: {accident_data.get('severity_score', 'Unknown')}
+        Confidence: {accident_data.get('severity_level', 'Unknown')}
+        Accuracy: {accident_data.get('accuracy', 'Unknown')}%
+        """
         
-        if result.returncode == 0:
-            processing_videos[filename]["status"] = "completed"
-            processing_videos[filename]["progress"] = 100
-            logging.info(f"Processed video: {output_path}")
-        else:
-            processing_videos[filename]["status"] = "error"
-            logging.error(f"Error processing video: {result.stderr}")
-    except Exception as e:
-        processing_videos[filename]["status"] = "error"
-        logging.exception(f"Exception processing video: {e}")
-    finally:
-        if os.path.exists(video_path):
-            os.remove(video_path)
-
-
-
-
-def process_video(video_path, output_path=None):
-    video = cv2.VideoCapture(video_path)
-    if not video.isOpened():
-        logging.error(f"Error: Could not open {video_path}")
-        return
-
-    video_filename = os.path.basename(video_path)
-    fps = video.get(cv2.CAP_PROP_FPS)
-    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    
-    if output_path:
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    
-    frame_count = 0
-    writer = None
-    accident_detected = False
-    severity_scores = []
-    accuracies = []
-    accident_clip_path = None
-    accident_start = None
-
-    # Extract timestamp from video filename if possible
-    # Assuming format like video_20250330_123045.mp4
-    try:
-        timestamp_str = video_filename.split('_', 1)[1]  # Get everything after "video_"
-        timestamp_str = timestamp_str.split('.')[0]  # Remove extension
-        # Use this timestamp in the accident clip filename later
-    except:
-        # Fallback to current time if format is different
-        # Subtract 2 hours from the current time for the fallback case
-        current_time = datetime.now(pytz.timezone('Africa/Kigali')) - timedelta(hours=2)
-        timestamp_str = current_time.strftime("%Y%m%d_%H%M%S")
-
-    while True:
-        ret, frame = video.read()
-        if not ret:
-            break
-
-        # Process frame (simulated logic)
-        if frame_count % 100 == 0:  # Simulate accident every 100 frames
-            pred = "Accident"
-            severity_score = np.random.randint(30, 100)
-            accuracy = np.random.randint(70, 100)
-            accident_detected = True
-        else:
-            pred = "No Accident"
-            severity_score = 0.0
-            accuracy = 95.0
-            
-        # Collect data only if accident is detected
-        if pred == "Accident":
-            if writer is None:
-                # Use the original video's timestamp in the accident clip name
-                accident_clip_path = os.path.join("accident_clips", f"accident_{timestamp_str}.mp4")
-                os.makedirs(os.path.dirname(accident_clip_path), exist_ok=True)
-                writer = cv2.VideoWriter(accident_clip_path, fourcc, fps, (width, height))
-                accident_start = datetime.now(pytz.timezone('Africa/Kigali'))
-
-            writer.write(frame)
-            severity_scores.append(severity_score)
-            accuracies.append(accuracy)
-
-        # Write frame to output video (if needed)
-        if output_path:
-            out.write(frame)
-
-        frame_count += 1
-
-    # After processing ALL frames, save data if accident occurred
-    if accident_detected:
-        avg_severity = sum(severity_scores) / len(severity_scores)
-        avg_accuracy = sum(accuracies) / len(accuracies)
-
-        if avg_accuracy <= 70:
-            severity_level = "low"
-        elif 70 < avg_accuracy <= 80:
-            severity_level = "medium"
-        else:
-            severity_level = "fatal"
-
-        # Also save the original video filename to help with lookup later
-        save_accident_data(
-            timestamp=accident_start.strftime("%Y-%m-%d %H:%M:%S"),
-            location=LOCATION,
-            severity_level=severity_level,
-            severity_score=avg_severity,
-            video_filename=f"{accident_clip_path}|{video_filename}",  # Include original filename
-            accuracy=avg_accuracy
+        # Send the message
+        message = client.messages.create(
+            body=message_body,
+            from_=TWILIO_PHONE_NUMBER,
+            to=RECIPIENT_PHONE_NUMBER
         )
         
-        # Print the accuracy to stdout so the server can capture it
-        print(avg_accuracy)
+        logging.info(f"Accident notification sent. SID: {message.sid}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send accident notification: {e}")
+        return False
 
-    # Cleanup resources
-    video.release()
-    if output_path:
-        out.release()
-    if writer is not None:
-        writer.release()
+def save_summary_to_db(timestamp, location, prediction_summary, severity_level, severity_score, video_path, accuracy):
+    try:
+        # Convert prediction_summary to JSON string if it's a dict
+        if isinstance(prediction_summary, dict):
+            prediction_summary_str = json.dumps(prediction_summary)
+        else:
+            prediction_summary_str = str(prediction_summary)
 
-    logging.info(f"Video processing completed: {video_filename}")
-    return os.path.basename(output_path) if output_path else video_filename
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+        
+        query = """
+        INSERT INTO accidents 
+        (timestamp, location, severity_level, severity_score, video_path, accuracy) 
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        
+        values = (
+            timestamp,
+            location,
+            severity_level,
+            float(severity_score),
+            video_path,
+            float(accuracy)
+        )
+        
+        cursor.execute(query, values)
+        conn.commit()
+        
+        print(f"\nData successfully saved to database with ID: {cursor.lastrowid}")
+        
+        # Prepare accident data for notification
+        accident_data = {
+            'timestamp': timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            'location': location,
+            'severity_score': f"{float(severity_score):.2f}",
+            'severity_level': severity_level,
+            'accuracy': f"{float(accuracy):.2f}"
+        }
+        
+        # Send notification
+        if send_accident_notification(accident_data):
+            print("Accident notification sent successfully!")
+        else:
+            print("Failed to send accident notification.")
+        
+    except mysql.connector.Error as err:
+        print(f"\nError saving to database: {err}")
+        print("Error details:")
+        print(f"Error Code: {err.errno}")
+        print(f"SQLSTATE: {err.sqlstate}")
+        print(f"Error Message: {err.msg}")
+    except Exception as e:
+        print(f"\nUnexpected error: {str(e)}")
+    finally:
+        if 'conn' in locals() and conn.is_connected():
+            cursor.close()
+            conn.close()
 
+def preprocess_frame(frame):
+    # Convert to RGB and normalize
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # Apply histogram equalization to each channel
+    frame_yuv = cv2.cvtColor(frame, cv2.COLOR_RGB2YUV)
+    frame_yuv[:,:,0] = cv2.equalizeHist(frame_yuv[:,:,0])
+    frame = cv2.cvtColor(frame_yuv, cv2.COLOR_YUV2RGB)
+    # Normalize
+    frame = frame.astype('float32') / 255.0
+    return frame
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        VIDEO_PATH = sys.argv[1]
-        if not os.path.isfile(VIDEO_PATH):
-            logging.error(f"Video file not found: {VIDEO_PATH}")
-            sys.exit(1)
-        OUTPUT_PATH = os.path.join("processed_videos", os.path.basename(VIDEO_PATH))
-        process_video(VIDEO_PATH, OUTPUT_PATH)
+def calculate_motion_metrics(prev_frame, current_frame):
+    if prev_frame is None:
+        return 0, 0, 0
+    
+    # Calculate absolute difference
+    diff = cv2.absdiff(prev_frame, current_frame)
+    # Convert to grayscale
+    gray = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
+    
+    # Calculate basic motion score
+    motion_score = np.mean(gray)
+    
+    # Calculate motion variance (sudden changes)
+    motion_variance = np.var(gray)
+    
+    # Calculate motion area (percentage of frame with motion)
+    _, thresh = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
+    motion_area = np.sum(thresh > 0) / (thresh.shape[0] * thresh.shape[1])
+    
+    return motion_score, motion_variance, motion_area
+
+def calculate_confidence_score(prob, motion_metrics):
+    motion_score, motion_variance, motion_area = motion_metrics
+    
+    # Base confidence on prediction probability
+    base_confidence = max(prob[0][0], prob[0][1])
+    
+    # Adjust confidence based on motion characteristics
+    motion_factor = min(1.0, motion_score * 2)  # Normalize motion score
+    variance_factor = min(1.0, motion_variance * 10)  # Normalize variance
+    area_factor = min(1.0, motion_area * 2)  # Normalize area
+    
+    # Combined confidence score
+    confidence = base_confidence * (0.4 + 0.2 * motion_factor + 0.2 * variance_factor + 0.2 * area_factor)
+    
+    return min(1.0, confidence)  # Ensure confidence is between 0 and 1
+
+def determine_severity_level(prob, motion_metrics):
+    motion_score, motion_variance, motion_area = motion_metrics
+    
+    # Calculate severity score based on probability and motion metrics
+    severity_score = (prob * 0.6 + motion_score * 0.2 + motion_variance * 0.1 + motion_area * 0.1) * 100
+    
+    # Determine severity level based on score
+    if severity_score >= 80:
+        return "High", severity_score
+    elif severity_score >= 50:
+        return "Medium", severity_score
     else:
-        logging.error("No video path provided")
-        sys.exit(1)
+        return "Low", severity_score
+
+def startapplication():
+    video = cv2.VideoCapture('cars.mp4')
+    prev_frame = None
+    confidence_threshold = 0.75
+    motion_threshold = 0.15
+    temporal_window = 5
+    predictions = []
+    motion_history = []
+    
+    # Get video properties
+    frame_width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = int(video.get(cv2.CAP_PROP_FPS))
+    
+    # Create video writer
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_path = os.path.join(UPLOADS_DIR, f"accident_{timestamp}.mp4")
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
+    
+    # Initialize prediction tracking
+    all_predictions = []
+    frame_count = 0
+    
+    print("\nStarting video processing...")
+    
+    while True:
+        ret, frame = video.read()
+        if not ret or frame is None:
+            print("\nVideo processing completed")
+            break
+            
+        frame_count += 1
+        
+        # Preprocess frame
+        processed_frame = preprocess_frame(frame)
+        roi = cv2.resize(processed_frame, (250, 250))
+        
+        # Calculate motion metrics
+        motion_metrics = calculate_motion_metrics(prev_frame, processed_frame)
+        prev_frame = processed_frame.copy()
+        
+        # Get prediction
+        pred, prob = model.predict_accident(roi[np.newaxis, :, :])
+        prediction_value = round(prob[0][0]*100, 2)  # Use accident probability as prediction value
+        
+        # Calculate confidence score
+        confidence = calculate_confidence_score(prob, motion_metrics)
+        
+        # Add to temporal windows
+        predictions.append((prediction_value, confidence))
+        motion_history.append(motion_metrics[0])  # Store motion score
+        
+        if len(predictions) > temporal_window:
+            predictions.pop(0)
+            motion_history.pop(0)
+        
+        # Calculate smoothed prediction
+        if predictions:
+            smoothed_prediction = np.mean([p[0] for p in predictions])
+            avg_confidence = np.mean([p[1] for p in predictions])
+            avg_motion = np.mean(motion_history)
+        else:
+            smoothed_prediction = prediction_value
+            avg_confidence = confidence
+            avg_motion = motion_metrics[0]
+        
+        # Store prediction for summary
+        all_predictions.append(smoothed_prediction)
+        
+        # Determine if detection is reliable
+        is_reliable = avg_confidence >= confidence_threshold
+        has_significant_motion = avg_motion > motion_threshold
+        
+        # Display real-time prediction
+        cv2.rectangle(frame, (0, 0), (400, 80), (0, 0, 0), -1)
+        cv2.putText(frame, f"Prediction: {smoothed_prediction:.1f}%", (20, 30), font, 0.7, (0, 255, 0), 2)
+        cv2.putText(frame, f"Motion: {avg_motion:.2f}", (20, 60), font, 0.7, (255, 255, 0), 2)
+        
+        # Write frame to video file
+        out.write(frame)
+        
+        # Print to console
+        print(f"\rFrame {frame_count}: Prediction: {smoothed_prediction:.1f}% | Motion: {avg_motion:.2f} | Reliability: {'High' if is_reliable else 'Low'}", end="")
+
+        if cv2.waitKey(33) & 0xFF == ord('q'):
+            break
+        cv2.imshow('Video', frame)  
+
+    # Calculate final summary statistics
+    if all_predictions:
+        final_prediction = np.mean(all_predictions)
+        prediction_std = np.std(all_predictions)
+        max_prediction = max(all_predictions)
+        min_prediction = min(all_predictions)
+        
+        # Create prediction summary
+        prediction_summary = {
+            'mean': float(final_prediction),
+            'std': float(prediction_std),
+            'max': float(max_prediction),
+            'min': float(min_prediction),
+            'total_frames': frame_count
+        }
+        
+        print("\nCalculating final statistics...")
+        
+        # Determine final severity level
+        severity_level, severity_score = determine_severity_level(final_prediction/100, motion_metrics)
+        
+        print("\nSaving to database and sending notification...")
+        
+        # Save summary to database and send notification
+        save_summary_to_db(
+            timestamp=datetime.now(),
+            location="Kigali",
+            prediction_summary=prediction_summary,
+            severity_level=severity_level,
+            severity_score=float(severity_score),
+            video_path=output_path,
+            accuracy=float(final_prediction)
+        )
+
+    # Release resources
+    video.release()
+    out.release()
+    cv2.destroyAllWindows()
+    print(f"\nVideo saved to: {output_path}")
+
+if __name__ == '__main__':
+    startapplication()

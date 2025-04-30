@@ -1,27 +1,21 @@
-from tensorflow.keras.models import model_from_json
+from keras.models import model_from_json
 import numpy as np
 
-class AccidentDetectionModel:
-    class_nums = ["No Accident", "Accident"]  # Ensure correct order
+class AccidentDetectionModel(object):
+
+    class_nums = ['Accident', "No Accident"]
 
     def __init__(self, model_json_file, model_weights_file):
-        # Load model architecture from JSON
-        with open(model_json_file, 'r') as json_file:
-            model_json = json_file.read()
-            
-        # Create model from JSON and load weights
-        self.loaded_model = model_from_json(model_json)
-        self.loaded_model.load_weights(model_weights_file)
+        # load model from JSON file
         
-        # Compile the model
-        self.loaded_model.compile(loss='sparse_categorical_crossentropy', 
-                                  optimizer='adam', 
-                                  metrics=['accuracy'])
+        with open(model_json_file, "r") as json_file:
+            loaded_model_json = json_file.read()
+            self.loaded_model = model_from_json(loaded_model_json)
+
+        # load weights into the new model
+        self.loaded_model.load_weights(model_weights_file)
+        self.loaded_model.make_predict_function()
 
     def predict_accident(self, img):
-        img = img.astype("float32") / 255.0 
-        
-        # Make prediction
-        preds = self.loaded_model.predict(img)
-        # Return class name and probabilities
-        return AccidentDetectionModel.class_nums[np.argmax(preds)], preds
+        self.preds = self.loaded_model.predict(img)
+        return AccidentDetectionModel.class_nums[np.argmax(self.preds)], self.preds
