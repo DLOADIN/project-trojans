@@ -3,12 +3,13 @@ from detection import AccidentDetectionModel
 import numpy as np
 import os
 import mysql.connector
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import json
 from twilio.rest import Client
 import logging
 from dotenv import load_dotenv
+import sys
 
 load_dotenv()
 
@@ -32,10 +33,12 @@ DB_CONFIG = {
     'port': 3306
 }
 
-# Create uploads directory if it doesn't exist
+# Create necessary directories
 UPLOADS_DIR = "uploads"
-if not os.path.exists(UPLOADS_DIR):
-    os.makedirs(UPLOADS_DIR)
+PROCESSED_DIR = "processed_videos"
+for directory in [UPLOADS_DIR, PROCESSED_DIR]:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 def get_twilio_client():
     try:
@@ -82,6 +85,9 @@ def save_summary_to_db(timestamp, location, prediction_summary, severity_level, 
         else:
             prediction_summary_str = str(prediction_summary)
 
+        # Adjust timestamp by subtracting 2 hours
+        adjusted_timestamp = timestamp - timedelta(hours=2)
+
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor()
         
@@ -92,7 +98,7 @@ def save_summary_to_db(timestamp, location, prediction_summary, severity_level, 
         """
         
         values = (
-            timestamp,
+            adjusted_timestamp,
             location,
             severity_level,
             float(severity_score),
@@ -105,9 +111,9 @@ def save_summary_to_db(timestamp, location, prediction_summary, severity_level, 
         
         print(f"\nData successfully saved to database with ID: {cursor.lastrowid}")
         
-        # Prepare accident data for notification
+        # Prepare accident data for notification with adjusted timestamp
         accident_data = {
-            'timestamp': timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            'timestamp': adjusted_timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             'location': location,
             'severity_score': f"{float(severity_score):.2f}",
             'severity_level': severity_level,
@@ -195,41 +201,52 @@ def determine_severity_level(prob, motion_metrics):
     else:
         return "Low", severity_score
 
-def startapplication():
-    video = cv2.VideoCapture('cars.mp4')
-    prev_frame = None
-    confidence_threshold = 0.75
-    motion_threshold = 0.15
-    temporal_window = 5
-    predictions = []
-    motion_history = []
+def process_video(video_path):
+    print(f"\nStarting analysis of video: {video_path}")
+    
+    video = cv2.VideoCapture(video_path)
+    if not video.isOpened():
+        print(f"Error: Could not open video file: {video_path}")
+        return None
     
     # Get video properties
     frame_width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(video.get(cv2.CAP_PROP_FPS))
+    total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
     
-    # Create video writer
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_path = os.path.join(UPLOADS_DIR, f"accident_{timestamp}.mp4")
+    # Setup video writer with adjusted timestamp
+    current_time = datetime.now() - timedelta(hours=2)
+    timestamp = current_time.strftime("%Y%m%d_%H%M%S")
+    filename = os.path.basename(video_path)
+    base_name = os.path.splitext(filename)[0]
+    output_path = os.path.join(PROCESSED_DIR, f"analyzed_{base_name}.mp4")
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
     
-    # Initialize prediction tracking
+    # Initialize tracking variables
+    prev_frame = None
+    predictions = []
+    motion_history = []
     all_predictions = []
     frame_count = 0
+    temporal_window = 5
     
-    print("\nStarting video processing...")
+    print("\nAnalyzing video frames... Press 'q' to stop")
+    
+    # Create window for display
+    cv2.namedWindow('Real-time Analysis', cv2.WINDOW_NORMAL)
+    cv2.resizeWindow('Real-time Analysis', 600, 520)  # Set to a reasonable size
     
     while True:
         ret, frame = video.read()
         if not ret or frame is None:
-            print("\nVideo processing completed")
             break
             
         frame_count += 1
+        progress = (frame_count / total_frames) * 100
         
-        # Preprocess frame
+        # Process frame
         processed_frame = preprocess_frame(frame)
         roi = cv2.resize(processed_frame, (250, 250))
         
@@ -239,59 +256,60 @@ def startapplication():
         
         # Get prediction
         pred, prob = model.predict_accident(roi[np.newaxis, :, :])
-        prediction_value = round(prob[0][0]*100, 2)  # Use accident probability as prediction value
+        prediction_value = round(prob[0][0]*100, 2)
         
         # Calculate confidence score
         confidence = calculate_confidence_score(prob, motion_metrics)
         
-        # Add to temporal windows
+        # Update tracking windows
         predictions.append((prediction_value, confidence))
-        motion_history.append(motion_metrics[0])  # Store motion score
+        motion_history.append(motion_metrics[0])
         
         if len(predictions) > temporal_window:
             predictions.pop(0)
             motion_history.pop(0)
         
-        # Calculate smoothed prediction
-        if predictions:
-            smoothed_prediction = np.mean([p[0] for p in predictions])
-            avg_confidence = np.mean([p[1] for p in predictions])
-            avg_motion = np.mean(motion_history)
-        else:
-            smoothed_prediction = prediction_value
-            avg_confidence = confidence
-            avg_motion = motion_metrics[0]
+        # Calculate current metrics
+        smoothed_prediction = np.mean([p[0] for p in predictions]) if predictions else prediction_value
+        avg_motion = np.mean(motion_history) if motion_history else motion_metrics[0]
         
-        # Store prediction for summary
+        # Store prediction
         all_predictions.append(smoothed_prediction)
         
-        # Determine if detection is reliable
-        is_reliable = avg_confidence >= confidence_threshold
-        has_significant_motion = avg_motion > motion_threshold
+        # Create analysis overlay
+        # Black background for text
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (0, 0), (400, 120), (0, 0, 0), -1)
+        cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
         
-        # Display real-time prediction
-        cv2.rectangle(frame, (0, 0), (400, 80), (0, 0, 0), -1)
+        # Add text with predictions
         cv2.putText(frame, f"Prediction: {smoothed_prediction:.1f}%", (20, 30), font, 0.7, (0, 255, 0), 2)
         cv2.putText(frame, f"Motion: {avg_motion:.2f}", (20, 60), font, 0.7, (255, 255, 0), 2)
+        cv2.putText(frame, f"Frame: {frame_count}/{total_frames}", (20, 90), font, 0.7, (255, 255, 255), 2)
+        cv2.putText(frame, f"Progress: {progress:.1f}%", (20, 120), font, 0.7, (255, 255, 255), 2)
         
-        # Write frame to video file
+        # Write frame with overlay
         out.write(frame)
         
-        # Print to console
-        print(f"\rFrame {frame_count}: Prediction: {smoothed_prediction:.1f}% | Motion: {avg_motion:.2f} | Reliability: {'High' if is_reliable else 'Low'}", end="")
-
-        if cv2.waitKey(33) & 0xFF == ord('q'):
+        # Show frame
+        cv2.imshow('Real-time Analysis', frame)
+        
+        # Print progress to terminal
+        print(f"\rProgress: {progress:.1f}% | Frame {frame_count}/{total_frames} | Prediction: {smoothed_prediction:.1f}%", end="")
+        
+        # Break if 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        cv2.imshow('Video', frame)  
-
-    # Calculate final summary statistics
+    
+    print("\n\nAnalysis completed. Calculating final results...")
+    
+    # Calculate final statistics
     if all_predictions:
         final_prediction = np.mean(all_predictions)
         prediction_std = np.std(all_predictions)
         max_prediction = max(all_predictions)
         min_prediction = min(all_predictions)
         
-        # Create prediction summary
         prediction_summary = {
             'mean': float(final_prediction),
             'std': float(prediction_std),
@@ -300,14 +318,10 @@ def startapplication():
             'total_frames': frame_count
         }
         
-        print("\nCalculating final statistics...")
-        
-        # Determine final severity level
+        # Determine severity
         severity_level, severity_score = determine_severity_level(final_prediction/100, motion_metrics)
         
-        print("\nSaving to database and sending notification...")
-        
-        # Save summary to database and send notification
+        # Save to database with adjusted timestamp
         save_summary_to_db(
             timestamp=datetime.now(),
             location="Kigali",
@@ -317,12 +331,43 @@ def startapplication():
             video_path=output_path,
             accuracy=float(final_prediction)
         )
-
-    # Release resources
+        
+        # Prepare results with adjusted timestamp
+        results = {
+            'timestamp': (datetime.now()).strftime("%Y-%m-%d %H:%M:%S"),
+            'location': "Kigali",
+            'severity_level': severity_level,
+            'severity_score': float(severity_score),
+            'video_path': output_path,
+            'accuracy': float(final_prediction),
+            'processed_frames': frame_count,
+            'total_frames': total_frames
+        }
+        
+        # Release resources
+        video.release()
+        out.release()
+        cv2.destroyAllWindows()
+        
+        print(f"\nProcessed video saved to: {output_path}")
+        print(f"Final Accuracy: {final_prediction:.1f}%")
+        print(f"Severity Level: {severity_level}")
+        print(f"Severity Score: {severity_score:.1f}")
+        
+        return results
+    
+    # Clean up if no predictions were made
     video.release()
     out.release()
     cv2.destroyAllWindows()
-    print(f"\nVideo saved to: {output_path}")
+    return None
 
 if __name__ == '__main__':
-    startapplication()
+    if len(sys.argv) > 1:
+        video_path = sys.argv[1]
+        results = process_video(video_path)
+        if results:
+            print("\nAnalysis Results:")
+            print(json.dumps(results, indent=2))
+    else:
+        print("Please provide a video path as an argument")
