@@ -259,12 +259,30 @@ def process_video(video_path):
     # Initialize final prediction for metrics
     final_prediction = base_prediction
     
+    # Calculate how many frames to process for a ~50 second analysis
+    # If video has fewer than 100 frames, process all; otherwise sample to get ~100 frames
+    target_analysis_frames = min(100, total_frames)
+    frame_step = max(1, total_frames // target_analysis_frames)
+    
+    # Calculate delay between frames to make the analysis last ~50 seconds
+    # Divide 50 seconds by the number of frames we'll actually process
+    delay_between_frames = 50.0 / target_analysis_frames
+    
+    # Track processing start time
+    start_time = time.time()
+    
     while True:
         ret, frame = video.read()
         if not ret or frame is None:
             break
             
         frame_count += 1
+        
+        # Skip frames based on calculated step to control processing time
+        if frame_count % frame_step != 0 and frame_count < total_frames - 1:
+            continue
+            
+        # Calculate progress based on frames processed vs total
         progress = (frame_count / total_frames) * 100
         
         # Process frame
@@ -296,7 +314,7 @@ def process_video(video_path):
         
         # Create analysis overlay with clear indicators
         overlay = frame.copy()
-        cv2.rectangle(overlay, (0, 0), (400, 180), (0, 0, 0), -1)
+        cv2.rectangle(overlay, (0, 0), (300, 180), (0, 0, 0), -1)
         cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
         
         # Add text with predictions
@@ -310,6 +328,7 @@ def process_video(video_path):
         cv2.putText(frame, f"Progress: {progress:.1f}%", (20, 150), font, 0.7, (255, 255, 255), 2)
         cv2.putText(frame, f"Severity: {severity_level}", (20, 180), font, 0.7, (255, 200, 0), 2)
         
+        
         # Write frame with overlay
         out.write(frame)
         
@@ -317,12 +336,27 @@ def process_video(video_path):
         cv2.imshow('Real-time Analysis', frame)
         
         # Print progress to terminal
-        print(f"\rProgress: {progress:.1f}% | Frame {frame_count}/{total_frames} | Prediction: {prediction_value:.1f}% | Type: {'CARS' if has_cars else 'NON-CARS'}", end="")
+        print(f"\rProgress: {progress:.1f}% | Frame {frame_count}/{total_frames} | Time: {elapsed_time:.1f}s | Prediction: {prediction_value:.1f}%", end="")
         
         # Break if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
             break
+            
+        # Add a delay to slow down processing for better visualization
+        # Dynamic delay: shorter at beginning, longer toward end
+        if elapsed_time < 40:  # First 40 seconds
+            time.sleep(delay_between_frames * 0.8)  # Slightly faster at beginning
+        else:
+            time.sleep(delay_between_frames * 1.5)  # Slower at end to emphasize final results
     
+    # Ensure total processing time is around 50 seconds
+    elapsed_time = time.time() - start_time
+    if elapsed_time < 50:
+        print(f"\nFinalizing analysis... ({50 - elapsed_time:.1f} seconds remaining)")
+        remaining_sleep = max(0, 50 - elapsed_time)
+        time.sleep(remaining_sleep)
+        
     print("\n\nAnalysis completed. Calculating final results...")
     
     # Calculate varied final metrics
