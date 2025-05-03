@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import mysql.connector
 import bcrypt
 import subprocess
-from twilio.rest import Client  # Import Twilio client
+from twilio.rest import Client  
 import json
 
 # Load environment variables
@@ -267,11 +267,15 @@ def upload_video():
         # Use adjusted timestamp for filename
         current_time = datetime.now() - timedelta(hours=2)
         timestamp = current_time.strftime("%Y%m%d_%H%M%S")
-        video_filename = f"video_{timestamp}.mp4"
+        
+        # Keep original filename but add timestamp
+        original_filename = file.filename
+        video_filename = f"{timestamp}_{original_filename}"
         video_path = os.path.join(UPLOAD_DIRECTORY, video_filename)
         
         # Save uploaded file
         file.save(video_path)
+        logging.info(f"Saved video to {video_path}")
         
         # Process video in background
         def process_in_background():
@@ -287,6 +291,7 @@ def upload_video():
                 cursor = conn.cursor(dictionary=True)
                 cursor.execute("SELECT * FROM accidents ORDER BY timestamp DESC LIMIT 1")
                 latest_accident = cursor.fetchone()
+                
                 if latest_accident:
                     return jsonify({
                         "status": "success",
@@ -298,28 +303,30 @@ def upload_video():
                 cursor.close()
                 conn.close()
         
-        # If no accident data found, return empty results with adjusted timestamp
+        # If no accident data found or database error, return an empty result with adjusted timestamp
         return jsonify({
             "status": "success",
+            "message": "Video is being processed",
             "results": {
-                "timestamp": (datetime.now() - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"),
+                "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "location": "Kigali",
-                "severity_level": "Low",
+                "severity_level": "Processing",
                 "severity_score": 0.0,
                 "video_path": "",
                 "accuracy": 0.0
             }
         })
-            
+        
     except Exception as e:
         logging.error(f"Error handling video upload: {e}")
-        # Return empty results with adjusted timestamp
+        # Return empty results with adjusted timestamp on error
         return jsonify({
             "status": "success",
+            "message": "Error processing video, showing latest data",
             "results": {
                 "timestamp": (datetime.now() - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"),
                 "location": "Kigali",
-                "severity_level": "Low",
+                "severity_level": "Error",
                 "severity_score": 0.0,
                 "video_path": "",
                 "accuracy": 0.0
@@ -354,21 +361,17 @@ def process_single_video(video_path, filename):
                 
                 if json_line:
                     return json_line
-                    
             except Exception as e:
                 logging.error(f"Error parsing camera.py output: {e}")
         
-        # If we get here, something went wrong but we'll return a processing status
+        # If we get here, something went wrong
         return None
         
     except Exception as e:
         logging.error(f"Exception processing video: {e}")
         return None
-    finally:
-        # Clean up the original uploaded file
-        if os.path.exists(video_path):
-            os.remove(video_path)
-
+    
+    
 # Store accident information and send notification
 @app.route('/report_accident', methods=['POST'])
 def report_accident():
