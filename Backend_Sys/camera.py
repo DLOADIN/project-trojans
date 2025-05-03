@@ -314,7 +314,7 @@ def process_video(video_path):
         
         # Create analysis overlay with clear indicators
         overlay = frame.copy()
-        cv2.rectangle(overlay, (0, 0), (300, 180), (0, 0, 0), -1)
+        cv2.rectangle(overlay, (0, 0), (400, 180), (0, 0, 0), -1)
         cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
         
         # Add text with predictions
@@ -328,6 +328,9 @@ def process_video(video_path):
         cv2.putText(frame, f"Progress: {progress:.1f}%", (20, 150), font, 0.7, (255, 255, 255), 2)
         cv2.putText(frame, f"Severity: {severity_level}", (20, 180), font, 0.7, (255, 200, 0), 2)
         
+        # Calculate time elapsed in analysis
+        elapsed_time = time.time() - start_time
+        remaining_time = max(0, 50 - elapsed_time)
         
         # Write frame with overlay
         out.write(frame)
