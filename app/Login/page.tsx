@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/Dashboard/ui/card";
 import { Input } from "@/app/Dashboard/ui/input";
@@ -16,19 +16,35 @@ const Login = () => {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  useEffect(() => {
+    // Clear any existing session data when the login page loads
+    document.cookie = 'sessionToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    localStorage.removeItem('sessionToken');
+    localStorage.removeItem('user');
+
+    // Prevent back button
+    window.history.pushState(null, '', window.location.href);
+    window.onpopstate = function () {
+      window.history.pushState(null, '', window.location.href);
+    };
+  }, []);
+
   const handleLogin = async () => {
-  try {
-    const response = await axios.post(`${API_URL}/login`, { email, password });
-    if ((response.data as { success: boolean }).success) {
-      localStorage.setItem("sessionToken", response.data.session_token);
-      router.push("../Dashboard");
-    } else {
-      setError("Invalid email or password");
+    try {
+      const response = await axios.post(`${API_URL}/login`, { email, password });
+      const data = response.data as { success: boolean; session_token: string };
+      if (data.success) {
+        // Store token in both cookie and localStorage for compatibility
+        document.cookie = `sessionToken=${data.session_token}; path=/`;
+        localStorage.setItem("sessionToken", data.session_token);
+        router.push("../Dashboard");
+      } else {
+        setError("Invalid email or password");
+      }
+    } catch (err) {
+      setError("Login failed. Please try again.");
     }
-  } catch (err) {
-    setError("Login failed. Please try again.");
-  }
-};
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen absolute size-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]">

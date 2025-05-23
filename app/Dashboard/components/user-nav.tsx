@@ -32,6 +32,7 @@ export function UserNav() {
       if (response.ok) {
         const data = await response.json();
         console.log('Logout successful:', data);
+        document.cookie = 'sessionToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
         localStorage.removeItem('sessionToken');
         localStorage.removeItem('user');
         router.push('../Login'); 
