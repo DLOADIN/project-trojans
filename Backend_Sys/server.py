@@ -9,9 +9,9 @@ import logging
 from datetime import datetime, timedelta
 import mysql.connector
 import bcrypt
-import subprocess
+# import subprocess
 from twilio.rest import Client  
-import json
+# import json
 
 # Load environment variables
 load_dotenv()
@@ -338,34 +338,17 @@ def process_single_video(video_path, filename):
     try:
         print(f"\nStarting video analysis for: {filename}")
         
-        # Run camera.py with the video path
-        result = subprocess.run(
-            ["python", "camera.py", video_path],
-            capture_output=True,
-            text=True,
-            encoding='utf-8'
-        )
+        # Import camera module directly
+        from camera import process_video
         
-        if result.returncode == 0:
-            # Try to parse the JSON results from camera.py
-            try:
-                # Find the last line that contains valid JSON
-                output_lines = result.stdout.strip().split('\n')
-                json_line = None
-                for line in reversed(output_lines):
-                    try:
-                        json_line = json.loads(line)
-                        break
-                    except:
-                        continue
-                
-                if json_line:
-                    return json_line
-            except Exception as e:
-                logging.error(f"Error parsing camera.py output: {e}")
+        # Process the video using camera.py's function
+        result = process_video(video_path)
         
-        # If we get here, something went wrong
-        return None
+        if result:
+            return result
+        else:
+            logging.error("Video processing failed")
+            return None
         
     except Exception as e:
         logging.error(f"Exception processing video: {e}")
@@ -476,20 +459,25 @@ def get_video_analysis(filename):
 # Fetch accident data
 @app.route('/fetch_database')
 def fetch_database():
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"status": "error"}), 500
-    
     try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"status": "error", "message": "Database connection failed"}), 500
+        
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM accidents ORDER BY id DESC")
-        data = cursor.fetchall()
-        return jsonify({"data": data})
+        try:
+            cursor.execute("SELECT * FROM accidents ORDER BY id DESC")
+            data = cursor.fetchall()
+            return jsonify({"status": "success", "data": data})
+        except mysql.connector.Error as err:
+            logging.error(f"Database error: {err}")
+            return jsonify({"status": "error", "message": f"Database error: {str(err)}"}), 500
+        finally:
+            cursor.close()
+            conn.close()
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
+        logging.error(f"Unexpected error in fetch_database: {e}")
+        return jsonify({"status": "error", "message": f"Unexpected error: {str(e)}"}), 500
 
 # Stream video frames
 @app.route('/video_stream/<filename>')
