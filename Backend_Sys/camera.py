@@ -270,12 +270,12 @@ def process_video(video_path):
     
     # Track processing start time
     start_time = time.time()
-    
+
     while True:
         ret, frame = video.read()
         if not ret or frame is None:
             break
-            
+
         frame_count += 1
         
         # Skip frames based on calculated step to control processing time
@@ -334,7 +334,7 @@ def process_video(video_path):
         
         # Write frame with overlay
         out.write(frame)
-        
+
         # Show frame
         cv2.imshow('Real-time Analysis', frame)
         
@@ -382,7 +382,7 @@ def process_video(video_path):
         timestamp=datetime.now(),
         location="Kigali",
         prediction_summary=prediction_summary,
-        severity_level=severity_level,
+            severity_level=severity_level,
         severity_score=float(severity_score),
         video_path=output_path,
         accuracy=float(final_prediction)
