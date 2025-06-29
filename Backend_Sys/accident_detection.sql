@@ -2,7 +2,7 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 
 CREATE TABLE accidents (
-   id int(11) NOT NULL,
+   id int(11) NOT NULL AUTO AUTO_INCREMENT,
    timestamp datetime DEFAULT NULL,
    location varchar(255) DEFAULT NULL,
    severity_level varchar(50) DEFAULT NULL,
