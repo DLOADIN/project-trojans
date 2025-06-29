@@ -380,7 +380,7 @@ def process_video(video_path):
     # Save to database with adjusted timestamp
     save_summary_to_db(
         timestamp=datetime.now(),
-        location="Kigali",
+        location="Musambira (Kamonyi District)",
         prediction_summary=prediction_summary,
             severity_level=severity_level,
         severity_score=float(severity_score),
@@ -391,7 +391,7 @@ def process_video(video_path):
     # Prepare results with adjusted timestamp
     results = {
         'timestamp': (datetime.now()).strftime("%Y-%m-%d %H:%M:%S"),
-        'location': "Kigali",
+        'location': "Musambira (Kamonyi District)",
         'severity_level': severity_level,
         'severity_score': float(severity_score),
         'video_path': output_path,

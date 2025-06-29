@@ -309,7 +309,7 @@ def upload_video():
             "message": "Video is being processed",
             "results": {
                 "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S"),
-                "location": "Kigali",
+                "location": "Musambira (Kamonyi District)",
                 "severity_level": "Processing",
                 "severity_score": 0.0,
                 "video_path": "",
@@ -325,7 +325,7 @@ def upload_video():
             "message": "Error processing video, showing latest data",
             "results": {
                 "timestamp": (datetime.now() - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"),
-                "location": "Kigali",
+                "location": "Musambira (Kamonyi District)",
                 "severity_level": "Error",
                 "severity_score": 0.0,
                 "video_path": "",
