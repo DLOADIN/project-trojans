@@ -273,13 +273,16 @@ def upload_video():
         video_filename = f"{timestamp}_{original_filename}"
         video_path = os.path.join(UPLOAD_DIRECTORY, video_filename)
         
+        # Get location from form data
+        location = request.form.get("location", "Musambira (Kamonyi District)")
+        
         # Save uploaded file
         file.save(video_path)
         logging.info(f"Saved video to {video_path}")
         
         # Process video in background
         def process_in_background():
-            process_single_video(video_path, video_filename)
+            process_single_video(video_path, video_filename, location)
         
         # Start processing in background
         threading.Thread(target=process_in_background).start()
@@ -309,7 +312,7 @@ def upload_video():
             "message": "Video is being processed",
             "results": {
                 "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S"),
-                "location": "Musambira (Kamonyi District)",
+                "location": location,
                 "severity_level": "Processing",
                 "severity_score": 0.0,
                 "video_path": "",
@@ -320,12 +323,13 @@ def upload_video():
     except Exception as e:
         logging.error(f"Error handling video upload: {e}")
         # Return empty results with adjusted timestamp on error
+        location = request.form.get("location", "Musambira (Kamonyi District)")
         return jsonify({
             "status": "success",
             "message": "Error processing video, showing latest data",
             "results": {
                 "timestamp": (datetime.now() - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"),
-                "location": "Musambira (Kamonyi District)",
+                "location": location,
                 "severity_level": "Error",
                 "severity_score": 0.0,
                 "video_path": "",
@@ -334,7 +338,7 @@ def upload_video():
         })
 
 # Process single video
-def process_single_video(video_path, filename):
+def process_single_video(video_path, filename, location):
     try:
         print(f"\nStarting video analysis for: {filename}")
         
@@ -342,7 +346,7 @@ def process_single_video(video_path, filename):
         from camera import process_video
         
         # Process the video using camera.py's function
-        result = process_video(video_path)
+        result = process_video(video_path, location)
         
         if result:
             return result

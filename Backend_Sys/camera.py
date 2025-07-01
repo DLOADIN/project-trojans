@@ -201,7 +201,7 @@ def determine_severity_level(prob, motion_metrics):
     else:
         return "Low", severity_score
 
-def process_video(video_path):
+def process_video(video_path, location):
     print(f"\nStarting analysis of video: {video_path}")
     
     # Check the filename for specific keywords
@@ -380,9 +380,9 @@ def process_video(video_path):
     # Save to database with adjusted timestamp
     save_summary_to_db(
         timestamp=datetime.now(),
-        location="Musambira (Kamonyi District)",
+        location=location,
         prediction_summary=prediction_summary,
-            severity_level=severity_level,
+        severity_level=severity_level,
         severity_score=float(severity_score),
         video_path=output_path,
         accuracy=float(final_prediction)
@@ -391,7 +391,7 @@ def process_video(video_path):
     # Prepare results with adjusted timestamp
     results = {
         'timestamp': (datetime.now()).strftime("%Y-%m-%d %H:%M:%S"),
-        'location': "Musambira (Kamonyi District)",
+        'location': location,
         'severity_level': severity_level,
         'severity_score': float(severity_score),
         'video_path': output_path,
@@ -415,9 +415,10 @@ def process_video(video_path):
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         video_path = sys.argv[1]
-        results = process_video(video_path)
+        location = sys.argv[2] if len(sys.argv) > 2 else "Musambira (Kamonyi District)"
+        results = process_video(video_path, location)
         if results:
             print("\nAnalysis Results:")
             print(json.dumps(results, indent=2))
     else:
-        print("Please provide a video path as an argument")
+        print("Please provide a video path and location as arguments")

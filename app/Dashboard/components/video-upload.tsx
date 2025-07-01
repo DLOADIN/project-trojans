@@ -17,12 +17,28 @@ interface AccidentAnalysis {
   total_frames?: number;
 }
 
+const areas = [
+  "Musambira (Kamonyi District)",
+  "Nyarutarama (Gasabo District)",
+  "Kagugu (Gasabo District)",
+  "Nyamata (Bugesera District)",
+  "Gahanga (Kicukiro District)",
+  "Kimironko (Gasabo District)",
+  "Nyundo (Rubavu District)",
+  "Ruhango (Ruhango District)",
+  "Byumba (Gicumbi District)",
+  "Kibeho (Nyaruguru District)",
+  "Kinigi (Musanze District)",
+  "Shyira (Nyabihu District)"
+];
+
 export default function VideoUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [analysis, setAnalysis] = useState<AccidentAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [location, setLocation] = useState<string>(areas[0]);
 
   // Function to fetch latest accident data
   const fetchLatestAccidentData = async () => {
@@ -69,6 +85,7 @@ export default function VideoUpload() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("location", location);
 
       const response = await fetch("http://localhost:5000/upload", {
         method: "POST",
@@ -125,6 +142,17 @@ export default function VideoUpload() {
       <CardContent>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
+            <p className="text-sm font-medium text-green-700">Select a Location</p>
+            <select
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              className="block w-64 text-sm text-slate-700 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-violet-200"
+              disabled={uploading}
+            >
+              {areas.map(area => (
+                <option key={area} value={area}>{area}</option>
+              ))}
+            </select>
             <input
               type="file"
               accept="video/*"
