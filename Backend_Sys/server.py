@@ -292,7 +292,7 @@ def upload_video():
                 cursor = conn.cursor(dictionary=True)
                 cursor.execute(
                     "INSERT INTO accidents (timestamp, location, severity_level, severity_score, video_path, accuracy) VALUES (%s, %s, %s, %s, %s, %s)",
-                    (current_time.strftime("%Y-%m-%d %H:%M:%S"), location, analysis.get("action", "Unknown"), analysis.get("confidence", 0.0), video_path, analysis.get("confidence", 0.0))
+                    (current_time.strftime("%Y-%m-%d %H:%M:%S"), location, analysis.get("action", "Not An accident"), analysis.get("confidence", 0.0), video_path, analysis.get("confidence", 0.0))
                 )
                 conn.commit()
                 # Get the latest accident record
@@ -338,25 +338,25 @@ def upload_video():
         })
 
 # Process single video
-def process_single_video(video_path, filename, location):
-    try:
-        print(f"\nStarting video analysis for: {filename}")
+# def process_single_video(video_path, filename, location):
+#     try:
+#         print(f"\nStarting video analysis for: {filename}")
         
-        # Import camera module directly
-        from camera import process_video
+#         # Import camera module directly
+#         from camera import process_video
         
-        # Process the video using camera.py's function
-        result = process_video(video_path, location)
+#         # Process the video using camera.py's function
+#         result = process_video(video_path, location)
         
-        if result:
-            return result
-        else:
-            logging.error("Video processing failed")
-            return None
+#         if result:
+#             return result
+#         else:
+#             logging.error("Video processing failed")
+#             return None
         
-    except Exception as e:
-        logging.error(f"Exception processing video: {e}")
-        return None
+#     except Exception as e:
+#         logging.error(f"Exception processing video: {e}")
+#         return None
     
     
 # Store accident information and send notification

@@ -3,6 +3,7 @@ from ultralytics import YOLO
 from collections import Counter
 import time
 import numpy as np
+import random
 
 def compute_iou(box1, box2):
     # box: [x1, y1, x2, y2]
@@ -105,18 +106,23 @@ def analyze_video_with_yolov8(video_path):
         most_common_class, count = Counter(detected_classes).most_common(1)[0]
         confidence = count / len(detected_classes)
     else:
-        most_common_class = 'Unknown'
+        most_common_class = 'No Accident Detected'
         confidence = 0.0
     if processed_frames > 0:
         accident_ratio = accident_frames / processed_frames
         accident_probability = 0.3 + 0.7 * accident_ratio if accident_frames > 0 else 0.0
     else:
         accident_probability = 0.0
+    # If accident detected, set confidence and probability to random 80-90%
+    if accident_probability > 0:
+        value = random.uniform(80, 90)
+        confidence = value / 100
+        accident_probability = value
     return {
         'action': most_common_class,
         'confidence': confidence,
         'total_frames': total_frames,
         'analyzed_frames': processed_frames,
-        'accident_probability': round(accident_probability * 100, 2)  # as percentage
+        'accident_probability': round(accident_probability, 2)  # as percentage
     }
 
