@@ -49,7 +49,7 @@ processing_videos = {}
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")  # Using your Twilio number from the screenshot
-RECIPIENT_PHONE_NUMBER = "+250791291003" # The verified caller ID from your second screenshot
+RECIPIENT_PHONE_NUMBER = "+250 791 291 003" # The verified caller ID from your second screenshot
 
 # Initialize Twilio client
 def get_twilio_client():
@@ -298,10 +298,12 @@ def upload_video():
                 # Get the latest accident record
                 cursor.execute("SELECT * FROM accidents ORDER BY timestamp DESC LIMIT 1")
                 latest_accident = cursor.fetchone()
-                return jsonify({
-                    "status": "success",
-                    "results": latest_accident
-                })
+                if latest_accident:
+                    send_accident_notification(latest_accident)
+                    return jsonify({
+                        "status": "success",
+                        "results": latest_accident
+                    })
             except Exception as e:
                 logging.error(f"Database error: {e}")
             finally:
@@ -552,8 +554,6 @@ def delete_old_videos():
 
 # Start cleanup thread
 threading.Thread(target=delete_old_videos, daemon=True).start()
-
-# Add this new endpoint
 
 # Run the app
 if __name__ == "__main__":
