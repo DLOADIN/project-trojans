@@ -12,6 +12,7 @@ import bcrypt
 # import subprocess
 from twilio.rest import Client  
 # import json
+from openaiazure import analyze_video_with_yolov8
 
 # Load environment variables
 load_dotenv()
@@ -280,32 +281,32 @@ def upload_video():
         file.save(video_path)
         logging.info(f"Saved video to {video_path}")
         
-        # Process video in background
-        def process_in_background():
-            process_single_video(video_path, video_filename, location)
+        # Analyze video with YOLOv8
+        analysis = analyze_video_with_yolov8(video_path)
+        # analysis is a dict with keys: action, confidence, total_frames, analyzed_frames
         
-        # Start processing in background
-        threading.Thread(target=process_in_background).start()
-        
-        # Get latest accident data from database
+        # Store result in database
         conn = get_db_connection()
         if conn:
             try:
                 cursor = conn.cursor(dictionary=True)
+                cursor.execute(
+                    "INSERT INTO accidents (timestamp, location, severity_level, severity_score, video_path, accuracy) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (current_time.strftime("%Y-%m-%d %H:%M:%S"), location, analysis.get("action", "Unknown"), analysis.get("confidence", 0.0), video_path, analysis.get("confidence", 0.0))
+                )
+                conn.commit()
+                # Get the latest accident record
                 cursor.execute("SELECT * FROM accidents ORDER BY timestamp DESC LIMIT 1")
                 latest_accident = cursor.fetchone()
-                
-                if latest_accident:
-                    return jsonify({
-                        "status": "success",
-                        "results": latest_accident
-                    })
+                return jsonify({
+                    "status": "success",
+                    "results": latest_accident
+                })
             except Exception as e:
                 logging.error(f"Database error: {e}")
             finally:
                 cursor.close()
                 conn.close()
-        
         # If no accident data found or database error, return an empty result with adjusted timestamp
         return jsonify({
             "status": "success",
@@ -313,16 +314,15 @@ def upload_video():
             "results": {
                 "timestamp": current_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "location": location,
-                "severity_level": "Processing",
-                "severity_score": 0.0,
-                "video_path": "",
-                "accuracy": 0.0
+                "severity_level": analysis.get("action", "Processing"),
+                "severity_score": analysis.get("confidence", 0.0),
+                "video_path": video_path,
+                "accuracy": analysis.get("confidence", 0.0)
             }
         })
         
     except Exception as e:
         logging.error(f"Error handling video upload: {e}")
-        # Return empty results with adjusted timestamp on error
         location = request.form.get("location", "Musambira (Kamonyi District)")
         return jsonify({
             "status": "success",
