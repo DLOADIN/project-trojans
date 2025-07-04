@@ -10,7 +10,5 @@
 # pip install -e .
 
 
-   python
-   
 
 

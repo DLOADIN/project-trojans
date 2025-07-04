@@ -29,6 +29,7 @@ CORS(app, resources={
         "supports_credentials": True  
     }
 })
+logging.info("CORS is configured and enabled.")
 
 # Directories
 UPLOAD_DIRECTORY = "videos"
@@ -65,25 +66,33 @@ def send_accident_notification(accident_data):
     if not client:
         logging.error("Twilio client not available. Cannot send notification.")
         return False
-    
     try:
+        # Use the timestamp from the accident_data row, or add 2 hours if not present
+        timestamp = accident_data.get('timestamp')
+        if timestamp:
+            # If timestamp is a string, try to parse and add 2 hours if needed
+            try:
+                dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+                timestamp = (dt + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception:
+                pass  # If parsing fails, use as is
+        else:
+            timestamp = (datetime.now() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
         # Create message body with accident information
         message_body = f"""
         ACCIDENT ALERT!
-        Time: {accident_data.get('timestamp', 'Unknown')}
+        Time: {timestamp}
         Location: {accident_data.get('location', 'Unknown')}
         Severity: {accident_data.get('severity_score', 'Unknown')}
         Confidence: {accident_data.get('severity_level', 'Unknown')}%
         Accuracy: {accident_data.get('accuracy', 'Unknown')}
         """
-        
         # Send the message
         message = client.messages.create(
             body=message_body,
             from_=TWILIO_PHONE_NUMBER,
             to=RECIPIENT_PHONE_NUMBER
         )
-        
         logging.info(f"Accident notification sent. SID: {message.sid}")
         return True
     except Exception as e:
@@ -127,7 +136,10 @@ def check_session():
 # Login endpoint
 @app.route('/login', methods=['POST'])
 def login():
+    print("Login endpoint hit")
+    logging.info("/login endpoint hit")
     data = request.get_json()
+    logging.info(f"Received login data: {data}")
     email = data.get('email')
     password = data.get('password')
 
@@ -164,8 +176,14 @@ def login():
         cursor.close()
         conn.close()
 
+@app.route('/test_connection', methods=['GET'])
+def test_connection():
+    logging.info("/test_connection endpoint hit")
+    return jsonify({"success": True, "message": "Backend is reachable"})
+
 @app.route('/get_current_user', methods=['GET'])
 def get_current_user():
+    logging.info("/get_current_user endpoint hit")
     user = check_session()
     if not user:
         return jsonify({"success": False, "error": "Unauthorized"}), 401
@@ -196,6 +214,7 @@ def get_current_user():
 # Signup endpoint
 @app.route('/signup', methods=['POST'])
 def signup():
+    logging.info("/signup endpoint hit")
     data = request.get_json()
     name = data.get('name')
     email = data.get('email')
@@ -225,6 +244,7 @@ def signup():
 # Update profile endpoint
 @app.route('/update_profile', methods=['POST'])
 def update_profile():
+    logging.info("/update_profile endpoint hit")
     user = check_session()
     if not user:
         return jsonify({"success": False, "message": "Unauthorized"}), 401
@@ -251,6 +271,7 @@ def update_profile():
 # Upload video endpoint
 @app.route("/upload", methods=["POST"])
 def upload_video():
+    logging.info("/upload endpoint hit")
     if "file" not in request.files:
         return jsonify({
             "status": "error",
@@ -298,12 +319,13 @@ def upload_video():
                 # Get the latest accident record
                 cursor.execute("SELECT * FROM accidents ORDER BY timestamp DESC LIMIT 1")
                 latest_accident = cursor.fetchone()
-                if latest_accident:
+                # Only send notification if an accident is detected
+                if latest_accident and analysis.get("action", "").lower() not in ["no accident detected", "not an accident"]:
                     send_accident_notification(latest_accident)
-                    return jsonify({
-                        "status": "success",
-                        "results": latest_accident
-                    })
+                return jsonify({
+                    "status": "success",
+                    "results": latest_accident
+                })
             except Exception as e:
                 logging.error(f"Database error: {e}")
             finally:
@@ -364,6 +386,7 @@ def upload_video():
 # Store accident information and send notification
 @app.route('/report_accident', methods=['POST'])
 def report_accident():
+    logging.info("/report_accident endpoint hit")
     data = request.get_json()
     user = check_session()
     
@@ -414,6 +437,7 @@ def report_accident():
 # Fetch uploaded videos for the current user
 @app.route('/get_user_videos', methods=['GET'])
 def get_user_videos():
+    logging.info("/get_user_videos endpoint hit")
     user = check_session()
     if not user:
         return jsonify({"success": False, "error": "Unauthorized"}), 401
@@ -426,6 +450,7 @@ def get_user_videos():
 
 @app.route('/get_video_analysis/<filename>')
 def get_video_analysis(filename):
+    logging.info(f"/get_video_analysis endpoint hit for {filename}")
     # Extract the timestamp from the filename format "video_YYYYMMDD_HHMMSS.mp4"
     try:
         # Parse timestamp from filename (assuming format like "video_20250330_123045.mp4")
@@ -465,6 +490,7 @@ def get_video_analysis(filename):
 # Fetch accident data
 @app.route('/fetch_database')
 def fetch_database():
+    logging.info("/fetch_database endpoint hit")
     try:
         conn = get_db_connection()
         if not conn:
@@ -488,6 +514,7 @@ def fetch_database():
 # Stream video frames
 @app.route('/video_stream/<filename>')
 def video_stream(filename):
+    logging.info(f"/video_stream endpoint hit for {filename}")
     def generate_frames():
         base_filename = os.path.splitext(filename)[0]
         frame_path = os.path.join(STREAM_FRAMES_DIR, f"{base_filename}.jpg")
@@ -505,12 +532,14 @@ def video_stream(filename):
 # Remove or simplify processing status endpoint since we're showing real-time analysis
 @app.route('/processing_status/<filename>')
 def check_processing_status(filename):
+    logging.info(f"/processing_status endpoint hit for {filename}")
     if filename in processing_videos:
         return jsonify(processing_videos[filename])
     return jsonify({"status": "not_found"})
 
 @app.route('/logout', methods=['POST'])
 def logout():
+    logging.info("/logout endpoint hit")
     session_token = request.headers.get('Authorization')
     if not session_token:
         return jsonify({"success": False, "message": "No session token provided"}), 400
