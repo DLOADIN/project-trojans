@@ -6,10 +6,11 @@ twilio
 python-dotenv
 numpy
 opencv-python
-tensorflow
-tensorflow-estimator
-tensorboard
-tensorboard-data-server
-tensorboard-plugin-wit
-tensorflow-io-gcs-filesystem
+ultralytics
+pandas
+matplotlib
+seaborn
+pillow
+scikit-learn
 keras
+mpmath
