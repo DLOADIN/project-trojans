@@ -103,11 +103,11 @@ def send_accident_notification(accident_data):
 def get_db_connection():
     try:
         return mysql.connector.connect(
-            host=os.getenv("DB_HOST", "localhost"),
-            user=os.getenv("DB_USER", "root"),
-            password=os.getenv("DB_PASSWORD", ""),
-            database=os.getenv("DB_DATABASE", "accident_detection"),
-            port=int(os.getenv("DB_PORT", 3306))
+            host='localhost',
+            user='root',
+            password='',
+            database='accident_detection',
+            port=3306
         )
     except mysql.connector.Error as err:
         logging.error(f"Database connection error: {err}")
