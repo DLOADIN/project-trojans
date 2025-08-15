@@ -485,23 +485,23 @@ export default function MainDataTable() {
                       Format
                     </label>
                     <Select value={exportFormat} onValueChange={setExportFormat}>
-                      <SelectTrigger className="col-span-3">
+                      <SelectTrigger className="col-span-3" >
                         <SelectValue placeholder="Select format" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="csv">
+                        <SelectItem value="csv" className="bg-green-500">
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4" />
                             CSV
                           </div>
                         </SelectItem>
-                        <SelectItem value="excel">
-                          <div className="flex items-center gap-2">
+                        <SelectItem value="excel" className="bg-green-500 ">
+                          <div className="flex items-center gap-2 bg-green-500">
                             <FileSpreadsheet className="h-4 w-4" />
                             Excel (.xls)
                           </div>
                         </SelectItem>
-                        <SelectItem value="pdf">
+                        <SelectItem value="pdf" className="bg-green-500">
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4" />
                             PDF (Print)
