@@ -1,0 +1,73 @@
+Accident Detection System - Project Overview
+===========================================
+
+Description:
+------------
+This project is an Accident Detection System that uses machine learning (YOLOv8) to detect accidents in uploaded video footage. It features a Flask backend for video analysis and data management, a Next.js frontend for user interaction, and a Streamlit admin dashboard for data visualization and management. Accident data is stored in a MySQL database, and real-time notifications can be sent via Twilio.
+
+Main Features:
+--------------
+- Upload and analyze video footage for accident detection.
+- Real-time display of severity score (90-98% if accident detected) and accuracy.
+- Admin dashboard for uploading videos, viewing analysis, and accident statistics.
+- MySQL database integration for storing accident and user data.
+- Real-time SMS notifications for detected accidents (Twilio integration).
+
+How the System Works:
+---------------------
+- Users or administrators upload video footage (e.g., from road cameras) through the admin dashboard or frontend interface.
+- Once a video is uploaded, the backend automatically processes and analyzes the footage using YOLOv8 and OpenCV to detect possible accidents.
+- If an accident is detected, the system assigns a severity score between 90% and 98% and records the event in the database, along with other details such as location, timestamp, and accuracy.
+- The results of the analysis, including severity and accident details, are immediately available in the dashboard and can be viewed by authorized users.
+- If configured, the system sends a real-time SMS notification to alert relevant parties about the detected accident.
+
+How to Use:
+-----------
+1. **Set up prerequisites:**
+   - Install Python 3.8+, Node.js, and MySQL.
+   - Install required Python packages: `pip install -r requirements.txt` (in backend and admin folders).
+   - Install Node.js dependencies: `npm install` (in frontend folder).
+
+2. **Database setup:**
+   - Create a MySQL database named `accident_detection`.
+   - Create the required tables (`accidents`, `users`) as described in the README or SQL scripts.
+   - Update database credentials in the backend configuration if needed.
+
+3. **Run the backend:**
+   - Navigate to the backend folder (e.g., `Backend_Sys`).
+   - Start the Flask server: `python server.py` (or `python app.py` if named differently).
+   - The backend runs at `http://localhost:5000`.
+
+4. **Run the frontend:**
+   - Navigate to the frontend folder.
+   - Start the Next.js server: `npm run dev`.
+   - The frontend runs at `http://localhost:3000`.
+
+5. **Run the admin dashboard:**
+   - Navigate to the admin folder.
+   - Start Streamlit: `streamlit run admin.py`.
+   - The dashboard runs at `http://localhost:8501`.
+
+6. **Upload and analyze videos:**
+   - Use the admin dashboard to upload video files (e.g., `.mp4`).
+   - The backend analyzes the video and returns accident detection results, including severity score and accuracy.
+   - If an accident is detected, the severity score will be between 90% and 98%.
+   - The analysis results are stored in the database and can be viewed in real-time.
+   - If enabled, SMS notifications are sent for detected accidents.
+
+7. **View and manage data:**
+   - Accident records and statistics can be viewed in the admin dashboard.
+   - Users can log in, sign up, and update their profiles via the frontend.
+
+Other Main Details:
+-------------------
+- The backend provides REST API endpoints for login, signup, video upload, accident reporting, and data fetching.
+- Accident detection uses YOLOv8 and OpenCV for video analysis.
+- SMS notifications require valid Twilio credentials in environment variables.
+- Old videos are automatically cleaned up from the server.
+
+Main Goal Achieved:
+-------------------
+By automating the process of accident detection from video uploads, analyzing footage in real-time, and notifying relevant parties instantly, this system achieves its main goal: to provide a fast, reliable, and automated solution for road accident detection and response.
+
+For more details, see the README.md or contact the project maintainer. 
